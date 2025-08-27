@@ -1,0 +1,68 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelos da Aplicação
+
+model User {
+  id        String    @id @default(cuid()) // CUID é um ID único e seguro para colisões
+  name      String
+  email     String    @unique
+  password  String
+  role      Role      @default(TEACHER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  bookings Booking[] // Um usuário pode ter várias reservas
+}
+
+model Room {
+  id        String    @id @default(cuid())
+  name      String
+  location  String?   // O '?' torna o campo opcional
+  capacity  Int
+  type      String
+  resources Json?     // Perfeito para listas flexíveis de itens
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  bookings Booking[] // Uma sala pode ter várias reservas
+}
+
+model Booking {
+  id        String   @id @default(cuid())
+  title     String
+  startTime DateTime
+  endTime   DateTime
+  status    BookingStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Chaves estrangeiras e Relações
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id])
+
+  // Índice para otimizar a busca por conflitos de horário
+  @@index([roomId, startTime, endTime])
+}
+
+enum Role {
+  TEACHER
+  MANAGER
+  ADMIN
+}
+
+enum BookingStatus {
+  CONFIRMED
+  PENDING
+  CANCELLED
+}
