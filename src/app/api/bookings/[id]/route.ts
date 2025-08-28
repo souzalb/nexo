@@ -9,14 +9,17 @@ import { db } from '@/app/_lib/prisma';
 // Schema para atualização de uma reserva
 const updateBookingSchema = z.object({
   title: z.string().min(3, 'O título é obrigatório').optional(),
+  // Aceitamos a string e a transformamos em um objeto Date
   startTime: z
     .string()
-    .transform((dateString) => new Date(dateString))
+    .transform((str) => new Date(str))
     .optional(),
   endTime: z
     .string()
-    .transform((dateString) => new Date(dateString))
+    .transform((str) => new Date(str))
     .optional(),
+  // Podemos adicionar roomId aqui se quisermos permitir a troca de sala
+  roomId: z.string().optional(),
 });
 
 // Handler para PATCH (Atualizar uma reserva)
@@ -51,7 +54,31 @@ export async function PATCH(
 
   try {
     const body = await req.json();
-    const { title, startTime, endTime } = updateBookingSchema.parse(body);
+    const { title, startTime, endTime, roomId } =
+      updateBookingSchema.parse(body);
+
+    // 3. --- NOVA LÓGICA DE VERIFICAÇÃO DE CONFLITO ---
+    // Se a sala foi alterada, precisamos verificar a disponibilidade na nova sala.
+    if (roomId && roomId !== bookingToUpdate.roomId) {
+      const existingBooking = await db.booking.findFirst({
+        where: {
+          roomId: roomId, // Verifica na NOVA sala
+          id: { not: params.id }, // Exclui a própria reserva que estamos editando
+          // Procura por sobreposição de horários
+          AND: [
+            { startTime: { lt: bookingToUpdate.endTime } },
+            { endTime: { gt: bookingToUpdate.startTime } },
+          ],
+        },
+      });
+
+      if (existingBooking) {
+        return NextResponse.json(
+          { message: 'Conflito de horário na nova sala selecionada.' },
+          { status: 409 }, // 409 Conflict
+        );
+      }
+    }
 
     const updatedBooking = await db.booking.update({
       where: { id: params.id },
@@ -59,6 +86,7 @@ export async function PATCH(
         title,
         startTime: startTime ? new Date(startTime) : undefined,
         endTime: endTime ? new Date(endTime) : undefined,
+        roomId,
       },
     });
 

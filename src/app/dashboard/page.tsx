@@ -21,6 +21,12 @@ async function getBookings() {
     title: `${booking.title} (${booking.room.name})`,
     start: booking.startTime,
     end: booking.endTime,
+    extendedProps: {
+      userName: booking.user.name,
+      roomName: booking.room.name,
+      roomId: booking.roomId,
+      userId: booking.userId,
+    },
   }));
 }
 

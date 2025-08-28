@@ -1,22 +1,23 @@
 // src/components/BookingCalendar.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Room } from '@prisma/client';
+import { useSession } from 'next-auth/react';
 
 import FullCalendar from '@fullcalendar/react';
-import { type DateSelectArg } from '@fullcalendar/core';
+import { type DateSelectArg, type EventClickArg } from '@fullcalendar/core';
+import { type EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 
-// Tipos para os dados do formulário e eventos
-type CalendarEvent = { id: string; title: string; start: Date; end: Date };
+// Schema e tipo para o formulário
 const bookingFormSchema = z.object({
   title: z.string().min(3, 'O título é obrigatório'),
   roomId: z.string().min(1, 'Selecione uma sala'),
@@ -24,7 +25,7 @@ const bookingFormSchema = z.object({
 type BookingFormData = z.infer<typeof bookingFormSchema>;
 
 interface BookingCalendarProps {
-  initialEvents: CalendarEvent[];
+  initialEvents: EventInput[];
   rooms: Room[];
 }
 
@@ -33,55 +34,126 @@ export default function BookingCalendar({
   rooms,
 }: BookingCalendarProps) {
   const router = useRouter();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { data: session } = useSession();
+
+  // Estados para controlar os modais
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+  // Estados para guardar os dados selecionados
   const [selectedSlot, setSelectedSlot] = useState<DateSelectArg | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<EventClickArg | null>(
+    null,
+  );
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<BookingFormData>({
     resolver: zodResolver(bookingFormSchema),
   });
 
-  // Handler para quando o usuário seleciona um horário no calendário
-  const handleDateSelect = (selectInfo: DateSelectArg) => {
+  // Efeito para preencher o formulário quando um evento é selecionado para edição
+  useEffect(() => {
+    if (!selectedEvent || !isFormModalOpen) return;
+
+    setValue('title', selectedEvent.event.title);
+    const roomId = selectedEvent.event.extendedProps.roomId;
+    if (roomId) {
+      setValue('roomId', roomId);
+    }
+  }, [selectedEvent, isFormModalOpen, setValue]);
+
+  // --- Handlers para o fluxo de Criação ---
+  const handleOpenCreateModal = (selectInfo: DateSelectArg) => {
     setSelectedSlot(selectInfo);
-    setIsModalOpen(true);
+    setIsFormModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
+  const handleCloseFormModal = () => {
+    setIsFormModalOpen(false);
     setSelectedSlot(null);
+    setSelectedEvent(null);
     reset();
   };
 
-  // Handler para submeter o formulário de nova reserva
+  // Handler unificado para submeter o formulário (Criação e Edição)
   const handleFormSubmit = async (data: BookingFormData) => {
-    if (!selectedSlot) return;
+    const isEditing = !!selectedEvent;
+
+    const url = isEditing
+      ? `/api/bookings/${selectedEvent.event.id}`
+      : '/api/bookings';
+    const method = isEditing ? 'PATCH' : 'POST';
+
+    const payload = isEditing
+      ? data
+      : {
+          ...data,
+          startTime: selectedSlot?.startStr,
+          endTime: selectedSlot?.endStr,
+        };
 
     try {
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
+      const response = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...data,
-          startTime: selectedSlot.startStr,
-          endTime: selectedSlot.endStr,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao criar reserva');
+        throw new Error(errorData.message || 'Falha na operação');
       }
 
-      handleCloseModal();
-      router.refresh(); // Atualiza os eventos na página
+      handleCloseFormModal();
+      router.refresh();
     } catch (error) {
       console.error(error);
       alert(error);
+    }
+  };
+
+  // --- Handlers para o fluxo de Detalhes/Edição/Exclusão ---
+  const handleEventClick = (clickInfo: EventClickArg) => {
+    setSelectedEvent(clickInfo);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleStartEditing = () => {
+    if (!selectedEvent) return;
+    setIsDetailsModalOpen(false);
+    setIsFormModalOpen(true);
+  };
+
+  const handleCloseDetailsModal = () => {
+    setIsDetailsModalOpen(false);
+    setSelectedEvent(null);
+  };
+
+  const handleDeleteBooking = async () => {
+    if (!selectedEvent) return;
+
+    if (confirm('Tem certeza que deseja cancelar esta reserva?')) {
+      try {
+        const response = await fetch(
+          `/api/bookings/${selectedEvent.event.id}`,
+          {
+            method: 'DELETE',
+          },
+        );
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Falha ao cancelar reserva');
+        }
+        handleCloseDetailsModal();
+        router.refresh();
+      } catch (error) {
+        alert(error);
+      }
     }
   };
 
@@ -89,7 +161,6 @@ export default function BookingCalendar({
     <>
       <div className="rounded-lg bg-white p-4 shadow-md">
         <FullCalendar
-          // ... (plugins, initialView, headerToolbar, etc. como antes) ...
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="timeGridWeek"
           headerToolbar={{
@@ -106,20 +177,24 @@ export default function BookingCalendar({
           weekends={true}
           allDaySlot={false}
           height="auto"
-          select={handleDateSelect} // <--- AQUI ESTÁ A MÁGICA
+          select={handleOpenCreateModal}
+          eventClick={handleEventClick}
         />
       </div>
 
-      {/* Modal de Criação de Reserva */}
-      {isModalOpen && selectedSlot && (
+      {/* Modal de Formulário (Criar/Editar) */}
+      {isFormModalOpen && (
         <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
           <div className="w-full max-w-lg rounded-lg bg-white p-8">
-            <h2 className="mb-4 text-xl font-bold">Criar Nova Reserva</h2>
-            <p className="mb-4 text-sm text-gray-600">
-              Horário selecionado:{' '}
-              {new Date(selectedSlot.start).toLocaleString()} até{' '}
-              {new Date(selectedSlot.end).toLocaleString()}
-            </p>
+            <h2 className="mb-4 text-xl font-bold">
+              {selectedEvent ? 'Editar Reserva' : 'Criar Nova Reserva'}
+            </h2>
+            {selectedSlot && (
+              <p className="mb-4 text-sm text-gray-600">
+                Horário: {new Date(selectedSlot.start).toLocaleString()} até{' '}
+                {new Date(selectedSlot.end).toLocaleString()}
+              </p>
+            )}
             <form
               onSubmit={handleSubmit(handleFormSubmit)}
               className="space-y-4"
@@ -171,7 +246,7 @@ export default function BookingCalendar({
               <div className="mt-6 flex justify-end gap-4">
                 <button
                   type="button"
-                  onClick={handleCloseModal}
+                  onClick={handleCloseFormModal}
                   className="rounded-md bg-gray-200 px-4 py-2 hover:bg-gray-300"
                 >
                   Cancelar
@@ -181,10 +256,65 @@ export default function BookingCalendar({
                   disabled={isSubmitting}
                   className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:bg-indigo-300"
                 >
-                  {isSubmitting ? 'Salvando...' : 'Salvar Reserva'}
+                  {isSubmitting ? 'Salvando...' : 'Salvar'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Detalhes */}
+      {isDetailsModalOpen && selectedEvent && (
+        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+          <div className="w-full max-w-lg rounded-lg bg-white p-8">
+            <h2 className="mb-4 text-xl font-bold">Detalhes da Reserva</h2>
+            <div className="space-y-2 text-sm">
+              <p>
+                <strong>Título:</strong> {selectedEvent.event.title}
+              </p>
+              <p>
+                <strong>Início:</strong>{' '}
+                {selectedEvent.event.start?.toLocaleString()}
+              </p>
+              <p>
+                <strong>Fim:</strong>{' '}
+                {selectedEvent.event.end?.toLocaleString()}
+              </p>
+              <p>
+                <strong>Reservado por:</strong>{' '}
+                {selectedEvent.event.extendedProps.userName}
+              </p>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-4">
+              <button
+                type="button"
+                onClick={handleCloseDetailsModal}
+                className="rounded-md bg-gray-200 px-4 py-2 hover:bg-gray-300"
+              >
+                Fechar
+              </button>
+
+              {(session?.user.role === 'ADMIN' ||
+                session?.user.id ===
+                  selectedEvent.event.extendedProps.userId) && (
+                <>
+                  <button
+                    onClick={handleStartEditing}
+                    className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={handleDeleteBooking}
+                    className="rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700"
+                  >
+                    Cancelar Reserva
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

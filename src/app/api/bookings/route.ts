@@ -37,6 +37,8 @@ export async function GET() {
       extendedProps: {
         userName: booking.user.name,
         roomName: booking.room.name,
+        roomId: booking.roomId,
+        userId: booking.userId,
       },
     }));
 
