@@ -26,37 +26,46 @@ export const authOptions: NextAuthOptions = {
       },
       // A lógica de autorização
       async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) {
-          return null;
+        try {
+          if (!credentials?.email || !credentials.password) {
+            console.log('Credenciais ausentes.');
+            return null;
+          }
+
+          const user = await db.user.findUnique({
+            where: { email: credentials.email },
+          });
+
+          console.log('Usuário encontrado no banco!');
+
+          // Adicionamos uma verificação extra aqui
+          if (!user || !user.password) {
+            console.log('Usuário não encontrado ou não possui senha no banco.');
+            return null;
+          }
+
+          const isPasswordValid = await compare(
+            credentials.password,
+            user.password,
+          );
+
+          console.log('A senha é válida?', isPasswordValid);
+          console.log('---[AUTHORIZE END]---');
+
+          if (!isPasswordValid) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error('ERRO DENTRO DO AUTHORIZE:', error);
+          return null; // Retorna null em caso de qualquer erro inesperado
         }
-
-        // 1. Encontrar o usuário no banco de dados pelo email
-        const user = await db.user.findUnique({
-          where: { email: credentials.email },
-        });
-
-        if (!user) {
-          return null;
-        }
-
-        // 2. Comparar a senha fornecida com o hash armazenado
-        const isPasswordValid = await compare(
-          credentials.password,
-          user.password,
-        );
-
-        if (!isPasswordValid) {
-          return null;
-        }
-
-        // 3. Se tudo estiver correto, retornar o objeto do usuário
-        // O NextAuth cuidará do resto (criar sessão, JWT, etc.)
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role, // Incluir o papel do usuário no token
-        };
       },
     }),
   ],
