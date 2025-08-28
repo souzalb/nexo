@@ -5,6 +5,9 @@ import { redirect } from 'next/navigation';
 import { db } from '../_lib/prisma';
 import BookingCalendar from '../_components/booking-calendar';
 import { Room } from '@prisma/client';
+import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
+import { AppSidebar } from '../_components/app-sidebar';
+import { SiteHeader } from '../_components/site-header';
 
 // Função para buscar e formatar os dados no servidor
 async function getBookings() {
@@ -44,11 +47,21 @@ export default async function DashboardPage() {
   const rooms = await getRooms();
 
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      {/* ... seu cabeçalho ... */}
-
-      {/* Passamos as salas para o componente do calendário */}
-      <BookingCalendar initialEvents={initialEvents} rooms={rooms} />
-    </div>
+    <SidebarProvider
+      style={
+        {
+          '--sidebar-width': 'calc(var(--spacing) * 72)',
+          '--header-height': 'calc(var(--spacing) * 12)',
+        } as React.CSSProperties
+      }
+    >
+      <AppSidebar variant="inset" />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="container mx-auto p-4 md:p-8">
+          <BookingCalendar initialEvents={initialEvents} rooms={rooms} />
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

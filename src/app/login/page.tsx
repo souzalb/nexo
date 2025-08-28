@@ -7,7 +7,6 @@ import { z } from 'zod';
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { ModeToggle } from '../_components/mode-toggle';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 
@@ -47,8 +46,8 @@ export default function LoginPage() {
         setError('Email ou senha inválidos. Tente novamente.');
         console.error('Falha no login:', result.error);
       } else if (result?.ok) {
-        // 3. Se o login for bem-sucedido, redirecionar para o dashboard
-        router.push('/dashboard');
+        // 3. Se o login for bem-sucedido, redirecionar para tela inicial
+        router.push('/');
       }
     } catch (err) {
       setError('Ocorreu um erro inesperado. Tente novamente mais tarde.');
@@ -62,7 +61,7 @@ export default function LoginPage() {
         <h2 className="mb-6 text-center text-2xl font-bold text-red-500">
           Acessar o Sistema
         </h2>
-        <ModeToggle />
+
         <form onSubmit={handleSubmit(onSubmit)}>
           {error && (
             <div className="mb-4 rounded p-3 text-center text-sm text-red-700">

@@ -5,6 +5,8 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+@custom-variant dark (&:is(.dark *));
+
 /* Não precisa do @custom-variant, o next-themes já usa .dark no <html> */
 
 @theme inline {
@@ -126,5 +128,14 @@
   }
   body {
     @apply bg-background text-foreground h-full;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
   }
 }
