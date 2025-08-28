@@ -1,7 +1,7 @@
 // src/components/RoomsManager.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Adicionamos useEffect
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,34 +25,98 @@ interface RoomsManagerProps {
 }
 
 export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
+
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue, // Usaremos para preencher o formulário
     formState: { errors, isSubmitting },
   } = useForm<RoomFormData>({
     resolver: zodResolver(roomSchema),
   });
 
-  const handleAddRoom = async (data: RoomFormData) => {
+  // --- Efeito para preencher o formulário quando uma sala for selecionada para edição ---
+  useEffect(() => {
+    if (selectedRoom) {
+      // Preenche os campos do formulário com os dados da sala selecionada
+      setValue('name', selectedRoom.name);
+      setValue('capacity', selectedRoom.capacity);
+      setValue('type', selectedRoom.type);
+
+      setValue('location', selectedRoom.location || '');
+    }
+  }, [selectedRoom, setValue]);
+
+  const handleOpenFormModal = (room: Room | null) => {
+    setSelectedRoom(room); // Se for null, é modo de adição. Se tiver uma sala, é edição.
+    setIsFormModalOpen(true);
+  };
+
+  const handleCloseFormModal = () => {
+    setIsFormModalOpen(false);
+    setSelectedRoom(null);
+    reset(); // Limpa o formulário ao fechar
+  };
+
+  // --- 2. HANDLER DO FORMULÁRIO ATUALIZADO (ADICIONAR E EDITAR) ---
+  const handleFormSubmit = async (data: RoomFormData) => {
+    const url = selectedRoom ? `/api/rooms/${selectedRoom.id}` : '/api/rooms';
+    const method = selectedRoom ? 'PATCH' : 'POST';
+
     try {
-      const response = await fetch('/api/rooms', {
-        method: 'POST',
+      const response = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) throw new Error('Falha ao criar sala');
+      if (!response.ok)
+        throw new Error(
+          `Falha ao ${selectedRoom ? 'atualizar' : 'criar'} sala`,
+        );
 
-      setIsModalOpen(false);
-      reset();
+      handleCloseFormModal();
+      router.refresh(); // Revalida os dados da página
+    } catch (error) {
+      console.error(error);
+      alert(
+        `Não foi possível ${selectedRoom ? 'atualizar' : 'adicionar'} a sala.`,
+      );
+    }
+  };
+
+  // --- 3. FUNCIONALIDADE DE EXCLUSÃO ---
+  const handleOpenDeleteModal = (room: Room) => {
+    setSelectedRoom(room);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setSelectedRoom(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedRoom) return;
+
+    try {
+      const response = await fetch(`/api/rooms/${selectedRoom.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Falha ao deletar sala');
+
+      handleCloseDeleteModal();
       router.refresh();
     } catch (error) {
       console.error(error);
-      alert('Não foi possível adicionar a sala.');
+      alert('Não foi possível deletar a sala.');
     }
   };
 
@@ -60,7 +124,7 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
     <div className="rounded-lg bg-white p-6 shadow-md">
       <div className="mb-4 flex justify-end">
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => handleOpenFormModal(null)}
           className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
         >
           + Adicionar Sala
@@ -68,22 +132,7 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
       </div>
 
       <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-              Nome
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-              Tipo
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-              Capacidade
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-              Ações
-            </th>
-          </tr>
-        </thead>
+        {/* ... Thead da tabela ... */}
         <tbody className="divide-y divide-gray-200 bg-white">
           {initialRooms.map((room) => (
             <tr key={room.id}>
@@ -96,22 +145,37 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
               <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
                 {room.capacity}
               </td>
-              <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
-                {/* Botões de Editar e Deletar virão aqui */}
-                <a href="#" className="text-indigo-600 hover:text-indigo-900">
+              <td className="space-x-4 px-6 py-4 text-sm font-medium whitespace-nowrap">
+                {/* --- BOTÕES DE AÇÃO ATUALIZADOS --- */}
+                <button
+                  onClick={() => handleOpenFormModal(room)}
+                  className="text-indigo-600 hover:text-indigo-900"
+                >
                   Editar
-                </a>
+                </button>
+                <button
+                  onClick={() => handleOpenDeleteModal(room)}
+                  className="text-red-600 hover:text-red-900"
+                >
+                  Excluir
+                </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      {isModalOpen && (
+      {/* Modal do Formulário (Adicionar/Editar) */}
+      {isFormModalOpen && (
         <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
           <div className="w-full max-w-lg rounded-lg bg-white p-8">
-            <h2 className="mb-4 text-xl font-bold">Adicionar Nova Sala</h2>
-            <form onSubmit={handleSubmit(handleAddRoom)} className="space-y-4">
+            <h2 className="mb-4 text-xl font-bold">
+              {selectedRoom ? 'Editar Sala' : 'Adicionar Nova Sala'}
+            </h2>
+            <form
+              onSubmit={handleSubmit(handleFormSubmit)}
+              className="space-y-4"
+            >
               <div>
                 <label
                   htmlFor="name"
@@ -131,7 +195,6 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
                   </p>
                 )}
               </div>
-
               <div>
                 <label
                   htmlFor="capacity"
@@ -195,7 +258,7 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
               <div className="mt-6 flex justify-end gap-4">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={handleCloseFormModal}
                   className="rounded-md bg-gray-200 px-4 py-2 hover:bg-gray-300"
                 >
                   Cancelar
@@ -209,6 +272,33 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmação de Exclusão */}
+      {isDeleteModalOpen && selectedRoom && (
+        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+          <div className="w-full max-w-md rounded-lg bg-white p-8">
+            <h2 className="mb-4 text-xl font-bold">Confirmar Exclusão</h2>
+            <p>
+              Tem certeza que deseja excluir a sala &ldquo;{selectedRoom.name}
+              &rdquo;? Esta ação não pode ser desfeita.
+            </p>
+            <div className="mt-6 flex justify-end gap-4">
+              <button
+                onClick={handleCloseDeleteModal}
+                className="rounded-md bg-gray-200 px-4 py-2 hover:bg-gray-300"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700"
+              >
+                Confirmar Exclusão
+              </button>
+            </div>
           </div>
         </div>
       )}
