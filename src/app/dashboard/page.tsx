@@ -4,6 +4,7 @@ import { authOptions } from '../api/auth/[...nextauth]/route';
 import { redirect } from 'next/navigation';
 import { db } from '../_lib/prisma';
 import BookingCalendar from '../_components/booking-calendar';
+import { Room } from '@prisma/client';
 
 // Função para buscar e formatar os dados no servidor
 async function getBookings() {
@@ -23,27 +24,25 @@ async function getBookings() {
   }));
 }
 
+async function getRooms(): Promise<Room[]> {
+  const rooms = await db.room.findMany({ orderBy: { name: 'asc' } });
+  return rooms;
+}
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
+  if (!session) redirect('/login');
 
-  if (!session) {
-    redirect('/login');
-  }
-
+  // Buscamos tanto os eventos quanto as salas
   const initialEvents = await getBookings();
+  const rooms = await getRooms();
 
   return (
     <div className="container mx-auto p-4 md:p-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">
-          Olá, <span className="text-indigo-600">{session.user?.name}!</span>
-        </h1>
-        <p className="mt-2 text-lg text-gray-600">
-          Veja abaixo o calendário de reservas das salas.
-        </p>
-      </div>
+      {/* ... seu cabeçalho ... */}
 
-      <BookingCalendar initialEvents={initialEvents} />
+      {/* Passamos as salas para o componente do calendário */}
+      <BookingCalendar initialEvents={initialEvents} rooms={rooms} />
     </div>
   );
 }
