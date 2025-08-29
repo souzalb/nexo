@@ -71,13 +71,13 @@ export function AddUserModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-lg rounded-lg bg-white p-8">
+      <div className="bg-secondary w-full max-w-lg rounded-lg p-8">
         <h2 className="mb-4 text-xl font-bold">Adicionar Novo Usuário</h2>
         <form onSubmit={handleSubmit(handleAddSubmit)} className="space-y-4">
           <div>
             <label
               htmlFor="add-name"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               Nome
             </label>
@@ -89,7 +89,7 @@ export function AddUserModal({
           <div>
             <label
               htmlFor="add-email"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               Email
             </label>
@@ -103,7 +103,7 @@ export function AddUserModal({
           <div>
             <label
               htmlFor="add-password"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               Senha
             </label>
@@ -121,7 +121,7 @@ export function AddUserModal({
           <div>
             <label
               htmlFor="add-role"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               Permissão
             </label>

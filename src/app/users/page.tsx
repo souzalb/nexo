@@ -30,7 +30,7 @@ export default async function UsersPage() {
 
   // Proteção de rota no nível da página
   if (session?.user.role !== 'ADMIN') {
-    redirect('/dashboard');
+    redirect('/');
   }
 
   const usersData = await getUsers();

@@ -76,6 +76,40 @@ export function EditUserModal({
     }
   };
 
+  // Handler para resetar a senha
+  const handleResetPassword = async () => {
+    if (!user) return;
+
+    toast.error(`Tem certeza que deseja resetar a senha de "${user.name}"?`, {
+      description: 'A nova senha será definida como "123456".',
+      action: {
+        label: 'Confirmar Reset',
+        onClick: async () => {
+          try {
+            const response = await fetch(
+              `./api/users/${user.id}/reset-password`,
+              {
+                method: 'POST',
+              },
+            );
+            if (!response.ok) {
+              const error = await response.json();
+              throw new Error(error.message);
+            }
+            toast.success('Senha resetada com sucesso!');
+            onSuccess();
+          } catch (error) {
+            toast.error((error as Error).message);
+          }
+        },
+      },
+      cancel: {
+        label: 'Cancelar',
+        onClick: () => {},
+      },
+    });
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -141,13 +175,32 @@ export function EditUserModal({
               <p className="mt-1 text-xs text-red-600">{errors.role.message}</p>
             )}
           </div>
-          <div className="mt-6 flex justify-end gap-4">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
+
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Senha
+            </label>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleResetPassword}
+            >
+              Resetar Senha
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
-            </Button>
+          </div>
+
+          <div className="mt-6 flex items-center justify-end">
+            <div className="flex gap-4">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
+            </div>
           </div>
         </form>
       </div>
