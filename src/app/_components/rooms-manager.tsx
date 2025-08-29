@@ -7,6 +7,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { Room } from '@prisma/client';
+import { Card, CardContent } from './ui/card';
+import Image from 'next/image';
+import { toast } from 'sonner';
 
 const roomSchema = z.object({
   name: z.string().min(3, 'O nome deve ter no mínimo 3 caracteres'),
@@ -66,9 +69,9 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
 
   // --- 2. HANDLER DO FORMULÁRIO ATUALIZADO (ADICIONAR E EDITAR) ---
   const handleFormSubmit = async (data: RoomFormData) => {
-    const url = selectedRoom ? `/api/rooms/${selectedRoom.id}` : '/api/rooms';
-    const method = selectedRoom ? 'PATCH' : 'POST';
-
+    const isEditing = !!selectedRoom;
+    const url = isEditing ? `/api/rooms/${selectedRoom.id}` : '/api/rooms';
+    const method = isEditing ? 'PATCH' : 'POST';
     try {
       const response = await fetch(url, {
         method: method,
@@ -81,13 +84,11 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
           `Falha ao ${selectedRoom ? 'atualizar' : 'criar'} sala`,
         );
 
+      toast.success(`Sala ${isEditing ? 'atualizada' : 'criada'} com sucesso!`);
       handleCloseFormModal();
       router.refresh(); // Revalida os dados da página
     } catch (error) {
-      console.error(error);
-      alert(
-        `Não foi possível ${selectedRoom ? 'atualizar' : 'adicionar'} a sala.`,
-      );
+      toast.error((error as Error).message);
     }
   };
 
@@ -109,19 +110,20 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
       const response = await fetch(`/api/rooms/${selectedRoom.id}`, {
         method: 'DELETE',
       });
-
-      if (!response.ok) throw new Error('Falha ao deletar sala');
-
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message);
+      }
+      toast.success('Sala excluída com sucesso!');
       handleCloseDeleteModal();
       router.refresh();
     } catch (error) {
-      console.error(error);
-      alert('Não foi possível deletar a sala.');
+      toast.error((error as Error).message);
     }
   };
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow-md">
+    <div className="rounded-lg bg-white p-6">
       <div className="mb-4 flex justify-end">
         <button
           onClick={() => handleOpenFormModal(null)}
@@ -130,23 +132,25 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
           + Adicionar Sala
         </button>
       </div>
-
-      <table className="min-w-full divide-y divide-gray-200">
-        {/* ... Thead da tabela ... */}
-        <tbody className="divide-y divide-gray-200 bg-white">
-          {initialRooms.map((room) => (
-            <tr key={room.id}>
-              <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-900">
-                {room.name}
-              </td>
-              <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
-                {room.type}
-              </td>
-              <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
-                {room.capacity}
-              </td>
-              <td className="space-x-4 px-6 py-4 text-sm font-medium whitespace-nowrap">
-                {/* --- BOTÕES DE AÇÃO ATUALIZADOS --- */}
+      <div className="grid grid-cols-4 gap-5">
+        {initialRooms.map((room) => (
+          <Card key={room.id}>
+            <CardContent>
+              <div className="flex flex-col gap-5">
+                <div className="relative h-[200px] w-full rounded-4xl">
+                  <Image
+                    src="/lab1.jpg"
+                    alt="laboratorio"
+                    fill
+                    className="rounded-lg object-cover"
+                  />
+                </div>
+                <div>
+                  <p>Nome da sala: {room.name}</p>
+                  <p>Tipo: {room.type}</p>
+                  <p>Capacidade: {room.capacity} alunos</p>
+                  <p>Localização: {room.location}</p>
+                </div>
                 <button
                   onClick={() => handleOpenFormModal(room)}
                   className="text-indigo-600 hover:text-indigo-900"
@@ -159,11 +163,11 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
                 >
                   Excluir
                 </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
       {/* Modal do Formulário (Adicionar/Editar) */}
       {isFormModalOpen && (

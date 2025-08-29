@@ -54,6 +54,7 @@ export async function PATCH(
 }
 
 // Handler para DELETE (Deletar uma sala)
+
 export async function DELETE(
   req: Request,
   { params }: { params: { id: string } },
@@ -64,21 +65,35 @@ export async function DELETE(
   }
 
   try {
-    await req.text();
+    // 1. ANTES de deletar, verificamos se existem reservas para esta sala
+    const existingBookingsCount = await db.booking.count({
+      where: {
+        roomId: params.id,
+      },
+    });
 
+    // 2. Se houver reservas, retornamos um erro claro (409 Conflict)
+    if (existingBookingsCount > 0) {
+      return NextResponse.json(
+        {
+          message:
+            'Esta sala não pode ser excluída pois possui reservas associadas. Por favor, remova as reservas primeiro.',
+        },
+        { status: 409 }, // 409 Conflict é um bom status para esta situação
+      );
+    }
+
+    // 3. Se não houver reservas, procedemos com a exclusão
     await db.room.delete({
       where: { id: params.id },
     });
-    // Retorna uma resposta vazia com status 204 No Content
+
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error('ERRO NO PATCH:', error);
-    // Pode falhar se a sala tiver reservas associadas (foreign key constraint)
+    // Este bloco agora lidará com outros erros inesperados
+    console.error('ERRO AO DELETAR SALA:', error);
     return NextResponse.json(
-      {
-        message:
-          'Erro ao deletar sala. Verifique se existem reservas associadas.',
-      },
+      { message: 'Erro interno ao tentar deletar a sala.' },
       { status: 500 },
     );
   }

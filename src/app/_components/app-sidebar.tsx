@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 import {
+  IconCalendarEvent,
+  IconCalendarStats,
   IconCamera,
   IconChartBar,
   IconDashboard,
@@ -9,7 +11,6 @@ import {
   IconFileAi,
   IconFileDescription,
   IconFileWord,
-  IconFolder,
   IconHelp,
   IconHome,
   IconInnerShadowTop,
@@ -46,8 +47,18 @@ const data = {
       icon: IconHome,
     },
     {
-      title: 'Dashboard',
+      title: 'Calendário',
       url: '/dashboard',
+      icon: IconCalendarEvent,
+    },
+    {
+      title: 'Gerenciar Salas',
+      url: '/rooms',
+      icon: IconCalendarStats,
+    },
+    {
+      title: 'Dashboard',
+      url: '#',
       icon: IconDashboard,
     },
 
@@ -56,11 +67,7 @@ const data = {
       url: '#',
       icon: IconChartBar,
     },
-    {
-      title: 'Projects',
-      url: '#',
-      icon: IconFolder,
-    },
+
     {
       title: 'Team',
       url: '#',

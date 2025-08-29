@@ -16,6 +16,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import ptBrLocale from '@fullcalendar/core/locales/pt-br';
+import { toast } from 'sonner';
 
 // Schema e tipo para o formulário
 const bookingFormSchema = z.object({
@@ -108,12 +109,13 @@ export default function BookingCalendar({
         const errorData = await response.json();
         throw new Error(errorData.message || 'Falha na operação');
       }
-
+      toast.success(
+        `Reserva ${isEditing ? 'atualizada' : 'criada'} com sucesso!`,
+      );
       handleCloseFormModal();
       router.refresh();
     } catch (error) {
-      console.error(error);
-      alert(error);
+      toast.error((error as Error).message);
     }
   };
 
@@ -149,10 +151,11 @@ export default function BookingCalendar({
           const errorData = await response.json();
           throw new Error(errorData.message || 'Falha ao cancelar reserva');
         }
+        toast.success('Reserva cancelada com sucesso!');
         handleCloseDetailsModal();
         router.refresh();
       } catch (error) {
-        alert(error);
+        toast.error((error as Error).message);
       }
     }
   };
