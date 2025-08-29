@@ -11,8 +11,8 @@ const updateRoomSchema = z.object({
   capacity: z.number().int().positive().optional(),
   type: z.string().min(3).optional(),
   location: z.string().optional(),
+  resources: z.array(z.string()).optional(),
 });
-
 // Handler para PATCH (Atualizar uma sala)
 
 export async function PATCH(

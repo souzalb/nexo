@@ -15,6 +15,7 @@ const roomSchema = z.object({
     .positive('A capacidade deve ser um número positivo'),
   type: z.string().min(3, 'O tipo é obrigatório'),
   location: z.string().optional(),
+  resources: z.array(z.string()).optional(),
 });
 
 // Handler para POST (Criar uma nova sala)
@@ -27,7 +28,8 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { name, capacity, type, location } = roomSchema.parse(body);
+    const { name, capacity, type, location, resources } =
+      roomSchema.parse(body);
 
     const newRoom = await db.room.create({
       data: {
@@ -35,7 +37,7 @@ export async function POST(req: Request) {
         capacity,
         type,
         location,
-        // resources pode ser adicionado aqui se vier do form
+        resources: resources || [],
       },
     });
 

@@ -28,7 +28,7 @@ model Room {
   location  String?   // O '?' torna o campo opcional
   capacity  Int
   type      String
-  resources Json?     // Perfeito para listas flexíveis de itens
+  resources String[] @default([])     
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 

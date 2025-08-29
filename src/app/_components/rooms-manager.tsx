@@ -10,6 +10,7 @@ import { Room } from '@prisma/client';
 import { Card, CardContent } from './ui/card';
 import Image from 'next/image';
 import { toast } from 'sonner';
+import { Badge } from './ui/badge';
 
 const roomSchema = z.object({
   name: z.string().min(3, 'O nome deve ter no mínimo 3 caracteres'),
@@ -19,6 +20,7 @@ const roomSchema = z.object({
     .positive('A capacidade deve ser um número positivo'),
   type: z.string().min(3, 'O tipo é obrigatório'),
   location: z.string().optional(),
+  resources: z.array(z.string()).optional(),
 });
 
 type RoomFormData = z.infer<typeof roomSchema>;
@@ -34,6 +36,9 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
+  const [currentResources, setCurrentResources] = useState<string[]>([]);
+  const [resourceInput, setResourceInput] = useState('');
+
   const {
     register,
     handleSubmit,
@@ -47,24 +52,47 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
   // --- Efeito para preencher o formulário quando uma sala for selecionada para edição ---
   useEffect(() => {
     if (selectedRoom) {
-      // Preenche os campos do formulário com os dados da sala selecionada
       setValue('name', selectedRoom.name);
       setValue('capacity', selectedRoom.capacity);
       setValue('type', selectedRoom.type);
-
       setValue('location', selectedRoom.location || '');
+      setValue('resources', selectedRoom.resources); // Seta os recursos no form
+      setCurrentResources(selectedRoom.resources); // Seta os recursos no estado local para UI
     }
-  }, [selectedRoom, setValue]);
+  }, [selectedRoom, isFormModalOpen, setValue]);
 
   const handleOpenFormModal = (room: Room | null) => {
     setSelectedRoom(room); // Se for null, é modo de adição. Se tiver uma sala, é edição.
     setIsFormModalOpen(true);
   };
 
+  //Funções para manipular os recursos ---
+  const handleAddResource = () => {
+    if (
+      resourceInput.trim() !== '' &&
+      !currentResources.includes(resourceInput.trim())
+    ) {
+      const updatedResources = [...currentResources, resourceInput.trim()];
+      setCurrentResources(updatedResources);
+      setValue('resources', updatedResources); // Atualiza o valor no react-hook-form
+      setResourceInput('');
+    }
+  };
+
+  const handleRemoveResource = (resourceToRemove: string) => {
+    const updatedResources = currentResources.filter(
+      (r) => r !== resourceToRemove,
+    );
+    setCurrentResources(updatedResources);
+    setValue('resources', updatedResources); // Atualiza o valor no react-hook-form
+  };
+
   const handleCloseFormModal = () => {
     setIsFormModalOpen(false);
     setSelectedRoom(null);
-    reset(); // Limpa o formulário ao fechar
+    setCurrentResources([]); // Limpa os recursos locais
+    setResourceInput('');
+    reset();
   };
 
   // --- 2. HANDLER DO FORMULÁRIO ATUALIZADO (ADICIONAR E EDITAR) ---
@@ -150,7 +178,14 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
                   <p>Tipo: {room.type}</p>
                   <p>Capacidade: {room.capacity} alunos</p>
                   <p>Localização: {room.location}</p>
-                  {/* <p>Recursos: {room.resources}</p> */}
+                  <div className="flex gap-1">
+                    <p>Recursos:</p>
+                    {room.resources.map((resource) => (
+                      <Badge key={resource} className="rounded-2xl bg-blue-400">
+                        {resource}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
                 <button
                   onClick={() => handleOpenFormModal(room)}
@@ -258,6 +293,55 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
                     {errors.location.message}
                   </p>
                 )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="resources"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Recursos
+                </label>
+                <div className="mt-1 flex rounded-md shadow-sm">
+                  <input
+                    id="resource-input"
+                    type="text"
+                    value={resourceInput}
+                    onChange={(e) => setResourceInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddResource();
+                      }
+                    }}
+                    className="block w-full flex-1 rounded-none rounded-l-md border-gray-300"
+                    placeholder="Ex: Projetor"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddResource}
+                    className="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500 hover:bg-gray-100"
+                  >
+                    Adicionar
+                  </button>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {currentResources.map((resource, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-x-1.5 rounded-md bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700"
+                    >
+                      {resource}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveResource(resource)}
+                        className="text-blue-700 hover:text-blue-900"
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                </div>
               </div>
 
               <div className="mt-6 flex justify-end gap-4">
