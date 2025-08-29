@@ -17,12 +17,9 @@ import {
 import { ArrowUpDown, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { User as PrismaUser, Role } from '@prisma/client';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { User as PrismaUser } from '@prisma/client';
 
-// Supondo que você tenha esses componentes shadcn/ui
+// Componentes de UI e Ícones
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import {
@@ -41,31 +38,29 @@ import {
   TableRow,
 } from './ui/table';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select';
-import {
   IconCopy,
   IconEdit,
   IconTrash,
   IconUserPlus,
 } from '@tabler/icons-react';
 
+// Novos componentes de Modal importados
+import { AddUserModal } from './add-user-modal';
+import { EditUserModal } from './edit-user-modal';
+
 export type User = Omit<PrismaUser, 'password' | 'updatedAt'>;
 
 declare module '@tanstack/react-table' {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface TableMeta<TData extends RowData> {
     openEditModal: (user: User) => void;
   }
 }
-// eslint-disable-next-line
+
+// Célula de Ações
+//eslint-disable-next-line
 function ActionsCell({ user, table }: { user: User; table: any }) {
   const router = useRouter();
-
   const handleDelete = async () => {
     toast.error(`Tem certeza que deseja excluir o usuário "${user.name}"?`, {
       action: {
@@ -86,10 +81,7 @@ function ActionsCell({ user, table }: { user: User; table: any }) {
           }
         },
       },
-      cancel: {
-        label: 'Cancelar',
-        onClick: () => {},
-      },
+      cancel: { label: 'Cancelar', onClick: () => {} },
     });
   };
 
@@ -101,14 +93,12 @@ function ActionsCell({ user, table }: { user: User; table: any }) {
       >
         <IconCopy />
       </Button>
-
       <Button
         onClick={() => table.options.meta?.openEditModal(user)}
         className="bg-orange-500 hover:bg-orange-400"
       >
         <IconEdit />
       </Button>
-
       <Button onClick={handleDelete} className="bg-red-600 hover:bg-red-500">
         <IconTrash />
       </Button>
@@ -116,6 +106,7 @@ function ActionsCell({ user, table }: { user: User; table: any }) {
   );
 }
 
+// Definição das Colunas
 export const columns: ColumnDef<User>[] = [
   {
     id: 'select',
@@ -195,13 +186,6 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
 }
 
-const userEditSchema = z.object({
-  name: z.string().min(3, 'O nome deve ter no mínimo 3 caracteres'),
-  email: z.email('Email inválido'),
-  role: z.nativeEnum(Role),
-});
-type UserEditFormData = z.infer<typeof userEditSchema>;
-
 export function UsersTable<TData, TValue>({
   columns,
   data,
@@ -215,53 +199,10 @@ export function UsersTable<TData, TValue>({
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
 
+  // Estados simplificados para controlar os modais
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    control,
-    formState: { errors, isSubmitting },
-  } = useForm<UserEditFormData>({
-    resolver: zodResolver(userEditSchema),
-  });
-
-  React.useEffect(() => {
-    if (selectedUser) {
-      setValue('name', selectedUser.name || '');
-      setValue('email', selectedUser.email || '');
-      setValue('role', selectedUser.role);
-    }
-  }, [selectedUser, setValue]);
-
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
-    setSelectedUser(null);
-    reset();
-  };
-
-  const handleEditSubmit = async (formData: UserEditFormData) => {
-    if (!selectedUser) return;
-    try {
-      const response = await fetch(`/api/users/${selectedUser.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
-      toast.success('Usuário atualizado com sucesso!');
-      handleCloseEditModal();
-      router.refresh();
-    } catch (error) {
-      toast.error((error as Error).message);
-    }
-  };
 
   const table = useReactTable({
     data,
@@ -277,11 +218,17 @@ export function UsersTable<TData, TValue>({
     state: { sorting, columnFilters, columnVisibility, rowSelection },
     meta: {
       openEditModal: (user) => {
-        setSelectedUser(user as User);
+        setSelectedUser(user);
         setIsEditModalOpen(true);
       },
     },
   });
+
+  const handleRefreshAndClose = () => {
+    setIsAddModalOpen(false);
+    setIsEditModalOpen(false);
+    router.refresh();
+  };
 
   return (
     <div className="w-full">
@@ -319,7 +266,10 @@ export function UsersTable<TData, TValue>({
                 ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button className="bg-blue-600 hover:bg-blue-500">
+          <Button
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-blue-600 hover:bg-blue-500"
+          >
             <IconUserPlus />
             Adicionar Usuário
           </Button>
@@ -398,92 +348,19 @@ export function UsersTable<TData, TValue>({
         </div>
       </div>
 
-      {isEditModalOpen && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-secondary w-full max-w-lg rounded-lg p-8">
-            <h2 className="mb-4 text-xl font-bold">Editar Usuário</h2>
-            <form
-              onSubmit={handleSubmit(handleEditSubmit)}
-              className="space-y-4"
-            >
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Nome
-                </label>
-                <Input id="name" {...register('name')} />
-                {errors.name && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {errors.name.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Email
-                </label>
-                <Input id="email" type="email" {...register('email')} />
-                {errors.email && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {errors.email.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label
-                  htmlFor="role"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Permissão
-                </label>
-                <Controller
-                  control={control}
-                  name="role"
-                  render={({ field }) => (
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma permissão" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.values(Role).map((role) => (
-                          <SelectItem key={role} value={role}>
-                            {role}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.role && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {errors.role.message}
-                  </p>
-                )}
-              </div>
-              <div className="mt-6 flex justify-end gap-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCloseEditModal}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Renderiza os modais componentizados */}
+      <AddUserModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSuccess={handleRefreshAndClose}
+      />
+
+      <EditUserModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSuccess={handleRefreshAndClose}
+        user={selectedUser}
+      />
     </div>
   );
 }

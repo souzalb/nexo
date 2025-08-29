@@ -9,7 +9,7 @@ import { db } from '@/app/_lib/prisma';
 // Schema para validar os dados da atualização
 const updateUserSchema = z.object({
   name: z.string().min(3, 'O nome é obrigatório'),
-  email: z.string().email('Email inválido'),
+  email: z.email('Email inválido'),
   role: z.nativeEnum(Role), // Valida contra as permissões do seu banco
 });
 
