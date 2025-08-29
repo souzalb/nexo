@@ -150,6 +150,7 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
                   <p>Tipo: {room.type}</p>
                   <p>Capacidade: {room.capacity} alunos</p>
                   <p>Localização: {room.location}</p>
+                  {/* <p>Recursos: {room.resources}</p> */}
                 </div>
                 <button
                   onClick={() => handleOpenFormModal(room)}
@@ -171,7 +172,7 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
 
       {/* Modal do Formulário (Adicionar/Editar) */}
       {isFormModalOpen && (
-        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-full max-w-lg rounded-lg bg-white p-8">
             <h2 className="mb-4 text-xl font-bold">
               {selectedRoom ? 'Editar Sala' : 'Adicionar Nova Sala'}
@@ -282,7 +283,7 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
 
       {/* Modal de Confirmação de Exclusão */}
       {isDeleteModalOpen && selectedRoom && (
-        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-full max-w-md rounded-lg bg-white p-8">
             <h2 className="mb-4 text-xl font-bold">Confirmar Exclusão</h2>
             <p>
