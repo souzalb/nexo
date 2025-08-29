@@ -12,7 +12,6 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signIn } from 'next-auth/react';
 import Image from 'next/image';
-import Link from 'next/link';
 
 const loginSchema = z.object({
   email: z.email('Email inválido'),
@@ -149,15 +148,6 @@ export function LoginForm({
                   </svg>
                   <span className="sr-only">Login with Meta</span>
                 </Button>
-              </div>
-              <div className="text-center text-sm">
-                Não tem uma conta?{' '}
-                <Link
-                  href="/register"
-                  className="font-medium text-indigo-600 hover:text-indigo-500"
-                >
-                  Cadastre-se
-                </Link>
               </div>
             </div>
           </form>

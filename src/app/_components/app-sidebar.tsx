@@ -13,7 +13,6 @@ import {
   IconFileWord,
   IconHelp,
   IconHome,
-  IconInnerShadowTop,
   IconReport,
   IconSearch,
   IconSettings,
@@ -33,13 +32,10 @@ import { NavMain } from './nav-main';
 import { NavDocuments } from './nav-documents';
 import { NavSecondary } from './nav-secondary';
 import { NavUser } from './nav-user';
+import Link from 'next/link';
+import Image from 'next/image';
 
 const data = {
-  user: {
-    name: 'shadcn',
-    email: 'm@example.com',
-    avatar: '/avatars/shadcn.jpg',
-  },
   navMain: [
     {
       title: 'Home',
@@ -69,8 +65,8 @@ const data = {
     },
 
     {
-      title: 'Team',
-      url: '#',
+      title: 'Usuários',
+      url: '/users',
       icon: IconUsers,
     },
   ],
@@ -166,12 +162,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
+              className="h-[40px] data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="#">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Acme Inc.</span>
-              </a>
+              <Link href="/">
+                <Image
+                  src="/nexo_header.png"
+                  fill
+                  alt="logo nexo"
+                  className="object-cover"
+                />
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -182,7 +182,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   );
