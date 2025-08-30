@@ -5,6 +5,8 @@ export { default } from 'next-auth/middleware';
 export const config = {
   matcher: [
     '/dashboard/:path*',
-    '/admin/:path*', // Protege a rota /dashboard e todas as suas sub-rotas
+    '/profile/:path*',
+    '/rooms/:path*',
+    '/users/:path*',
   ],
 };

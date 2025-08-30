@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,26 +10,26 @@ datasource db {
 // Modelos da Aplicação
 
 model User {
-  id        String    @id @default(cuid()) // CUID é um ID único e seguro para colisões
+  id        String   @id @default(cuid()) // CUID é um ID único e seguro para colisões
   name      String
-  email     String    @unique
+  email     String   @unique
   password  String
-  role      Role      @default(TEACHER)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  role      Role     @default(TEACHER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   bookings Booking[] // Um usuário pode ter várias reservas
 }
 
 model Room {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
-  location  String?   // O '?' torna o campo opcional
+  location  String? // O '?' torna o campo opcional
   capacity  Int
   type      String
-  resources String[] @default([])     
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  resources String[] @default([])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   bookings Booking[] // Uma sala pode ter várias reservas
 }
@@ -40,21 +39,24 @@ model Booking {
   title     String
   startTime DateTime
   endTime   DateTime
-  status    BookingStatus @default(PENDING)
+  status    BookingStatus @default(CONFIRMED)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // --- CAMPOS PARA RESERVAS RECORRENTES ---
+  classCode      String? // Código da turma (opcional para reservas únicas)
+  bookingGroupId String? // ID para agrupar reservas da mesma turma
 
   // Chaves estrangeiras e Relações
   userId    String
   user      User     @relation(fields: [userId], references: [id])
 
   roomId    String
-  room      Room     @relation(fields: [roomId], references: [id])
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
-  // Índice para otimizar a busca por conflitos de horário
   @@index([roomId, startTime, endTime])
+  @@index([bookingGroupId]) // Adicionar um índice para facilitar a busca por grupo
 }
-
 enum Role {
   TEACHER
   MANAGER
