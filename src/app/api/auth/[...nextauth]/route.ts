@@ -1,97 +1,91 @@
-// src/app/api/auth/[...nextauth]/route.ts
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { compare } from 'bcryptjs';
-import { db } from '@/app/_lib/prisma';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
+import { compare } from 'bcryptjs';
+
+import { Role } from '@prisma/client';
+import { db } from '@/app/_lib/prisma';
 
 export const authOptions: NextAuthOptions = {
-  // Usar o Prisma Adapter para conectar o NextAuth ao seu banco de dados
-  //@typescript-eslint/ban-ts-comment
   adapter: PrismaAdapter(db),
-  // Definir a estratégia de sessão
-
   session: {
     strategy: 'jwt',
   },
-  // Chave secreta para assinar os JWTs
   secret: process.env.NEXTAUTH_SECRET,
-  // Configurar os provedores de autenticação
   providers: [
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        email: { label: 'Email', type: 'email', placeholder: 'seu@email.com' },
+        email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      // A lógica de autorização
       async authorize(credentials) {
-        try {
-          if (!credentials?.email || !credentials.password) {
-            console.log('Credenciais ausentes.');
-            return null;
-          }
-
-          const user = await db.user.findUnique({
-            where: { email: credentials.email },
-          });
-
-          console.log('Usuário encontrado no banco!');
-
-          // Adicionamos uma verificação extra aqui
-          if (!user || !user.password) {
-            console.log('Usuário não encontrado ou não possui senha no banco.');
-            return null;
-          }
-
-          const isPasswordValid = await compare(
-            credentials.password,
-            user.password,
-          );
-
-          console.log('A senha é válida?', isPasswordValid);
-          console.log('---[AUTHORIZE END]---');
-
-          if (!isPasswordValid) {
-            return null;
-          }
-
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-          };
-        } catch (error) {
-          console.error('ERRO DENTRO DO AUTHORIZE:', error);
-          return null; // Retorna null em caso de qualquer erro inesperado
+        if (!credentials?.email || !credentials.password) {
+          return null;
         }
+        const user = await db.user.findUnique({
+          where: { email: credentials.email },
+        });
+        if (!user || !user.password) {
+          return null;
+        }
+        const isPasswordValid = await compare(
+          credentials.password,
+          user.password,
+        );
+        if (!isPasswordValid) {
+          return null;
+        }
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        };
       },
     }),
   ],
-  // Callbacks para customizar o comportamento
   callbacks: {
-    // Incluir dados adicionais (como role e id) no token JWT
-    async jwt({ token, user }) {
+    // A função jwt é chamada sempre que um JSON Web Token é criado ou atualizado.
+    async jwt({ token, user, trigger }) {
+      // No login inicial, adicionamos os dados do usuário ao token.
       if (user) {
         token.id = user.id;
-        // @typescript-eslint/ban-ts-comment
         token.role = user.role;
+        token.name = user.name;
+        token.email = user.email;
       }
+
+      // Quando a função `update` da sessão é chamada no cliente (trigger === "update"),
+      // nós buscamos novamente os dados do usuário no banco para garantir que o token
+      // seja atualizado com os dados mais recentes e consistentes.
+      if (trigger === 'update') {
+        const dbUser = await db.user.findUnique({
+          where: { id: token.id as string },
+        });
+        if (dbUser) {
+          token.name = dbUser.name;
+          token.email = dbUser.email;
+          token.role = dbUser.role;
+        }
+      }
+
       return token;
     },
-    // Incluir dados adicionais na sessão do cliente (acessível no frontend)
+    // A função session é chamada sempre que a sessão é verificada no cliente.
+    // Ela usa os dados do token para construir o objeto da sessão.
     async session({ session, token }) {
-      if (session.user) {
+      if (token && session.user) {
         session.user.id = token.id as string;
-        session.user.role = token.role;
+        session.user.role = token.role as Role;
+        session.user.name = token.name;
+        session.user.email = token.email;
       }
       return session;
     },
   },
-  // Opcional: customizar páginas de login/erro se necessário
   pages: {
-    signIn: '/login', // Vamos criar essa página no frontend depois
+    signIn: '/login',
   },
 };
 

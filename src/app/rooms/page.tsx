@@ -4,9 +4,9 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { redirect } from 'next/navigation';
 import { db } from '@/app/_lib/prisma';
 import RoomsManager from '@/app/_components/rooms-manager';
-import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
-import { AppSidebar } from '../_components/app-sidebar';
-import { SiteHeader } from '../_components/site-header';
+import { SidebarInset, SidebarProvider } from '@/app/_components/ui/sidebar';
+import { AppSidebar } from '@/app/_components/app-sidebar';
+import { SiteHeader } from '@/app/_components/site-header';
 
 // Função para buscar os dados no servidor
 async function getRooms() {
