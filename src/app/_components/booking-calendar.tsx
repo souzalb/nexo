@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
+import { IconCalendarPlus } from '@tabler/icons-react';
 
 const bookingFormSchema = z.object({
   title: z.string().min(3, 'O título é obrigatório'),
@@ -199,11 +200,12 @@ export default function BookingCalendar({
           </h1>
           <p className="mt-1 text-sm text-gray-500">
             Clique numa reserva para ver detalhes ou use o botão para criar
-            reservas recorrentes.
+            reservas.
           </p>
         </div>
         <Button onClick={() => setIsRecurringModalOpen(true)}>
-          Criar Reserva Recorrente
+          <IconCalendarPlus />
+          Criar Reserva
         </Button>
       </div>
 

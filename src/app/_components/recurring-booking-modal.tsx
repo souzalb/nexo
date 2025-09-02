@@ -112,7 +112,7 @@ export function RecurringBookingModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="w-full max-w-lg rounded-lg bg-white p-8">
-        <h2 className="mb-6 text-xl font-bold">Criar Reserva Recorrente</h2>
+        <h2 className="mb-6 text-xl font-bold">Criar Reserva</h2>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
           {session?.user.role === 'ADMIN' && (
             <div>

@@ -50,9 +50,10 @@ export async function POST(req: Request) {
 
     const currentDate = new Date(startDate);
     const finalDate = new Date(endDate);
+    const user = await db.user.findUnique({ where: { id: targetUserId } });
 
     const bookingGroupId = crypto.randomUUID();
-    const title = `Turma: ${classCode}`;
+    const title = `${classCode} - ${user?.name}`;
     const times = periodTimesUTC[period];
 
     while (currentDate <= finalDate) {
