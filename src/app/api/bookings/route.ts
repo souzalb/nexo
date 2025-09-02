@@ -12,6 +12,7 @@ const recurringBookingSchema = z.object({
   startDate: z.string(), // Espera "YYYY-MM-DD"
   endDate: z.string(), // Espera "YYYY-MM-DD"
   weekdays: z.array(z.number().min(0).max(6)),
+  userId: z.string().optional(),
 });
 
 // Mapeia os períodos para horários específicos, JÁ AJUSTADOS PARA UTC-3
@@ -20,7 +21,7 @@ const periodTimesUTC: {
 } = {
   MANHA: { start: [10, 30], end: [14, 30] }, // 07:30-11:30 no Brasil
   TARDE: { start: [16, 0], end: [20, 0] }, // 13:00-17:00 no Brasil
-  NOITE: { start: [21, 30], end: [0, 30] }, // 18:30-22:30 no Brasil (termina no dia seguinte em UTC)
+  NOITE: { start: [21, 30], end: [0, 30] }, // 18:30-21:30 no Brasil (termina no dia seguinte em UTC)
 };
 
 export async function POST(req: Request) {
@@ -31,8 +32,11 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { roomId, classCode, period, startDate, endDate, weekdays } =
+    const { roomId, classCode, period, startDate, endDate, weekdays, userId } =
       recurringBookingSchema.parse(body);
+
+    const targetUserId =
+      session.user.role === 'ADMIN' && userId ? userId : session.user.id;
 
     const bookingsToCreate: {
       title: string;
@@ -68,7 +72,7 @@ export async function POST(req: Request) {
           title,
           startTime,
           endTime,
-          userId: session.user.id,
+          userId: targetUserId,
           roomId,
           classCode,
           bookingGroupId,
@@ -87,7 +91,37 @@ export async function POST(req: Request) {
       );
     }
 
-    const conflictingBookings = await db.booking.findMany({
+    // Verifica se o utilizador já tem uma reserva no mesmo período/horário ---
+    const userPeriodConflict = await db.booking.findFirst({
+      where: {
+        userId: targetUserId,
+        OR: bookingsToCreate.map((b) => ({
+          AND: [
+            { startTime: { lt: b.endTime } },
+            { endTime: { gt: b.startTime } },
+          ],
+        })),
+      },
+      include: {
+        room: { select: { name: true } },
+      },
+    });
+
+    if (userPeriodConflict) {
+      const conflictDate = userPeriodConflict.startTime.toLocaleDateString(
+        'pt-BR',
+        { timeZone: 'UTC' },
+      );
+      return NextResponse.json(
+        {
+          message: `Este utilizador já possui uma reserva ("${userPeriodConflict.title}") na sala "${userPeriodConflict.room.name}" que conflita com este período no dia ${conflictDate}.`,
+        },
+        { status: 409 },
+      );
+    }
+
+    // Verificação de conflito de sala (existente)
+    const roomConflict = await db.booking.findFirst({
       where: {
         roomId: roomId,
         OR: bookingsToCreate.map((b) => ({
@@ -99,9 +133,8 @@ export async function POST(req: Request) {
       },
     });
 
-    if (conflictingBookings.length > 0) {
-      const firstConflict = conflictingBookings[0];
-      const conflictDate = firstConflict.startTime.toLocaleDateString('pt-BR', {
+    if (roomConflict) {
+      const conflictDate = roomConflict.startTime.toLocaleDateString('pt-BR', {
         timeZone: 'UTC',
       });
       return NextResponse.json(

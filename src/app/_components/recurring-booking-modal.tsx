@@ -1,13 +1,13 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Room } from '@prisma/client';
+import { Room, User } from '@prisma/client';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
-// Supondo que tem estes componentes (shadcn/ui)
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import {
@@ -19,115 +19,153 @@ import {
 } from './ui/select';
 import { Checkbox } from './ui/checkbox';
 
+// Schema de validação para o formulário
+const schema = z
+  .object({
+    roomId: z.string().min(1, 'Por favor, selecione uma sala.'),
+    classCode: z.string().min(1, 'O código da turma é obrigatório.'),
+    period: z.enum(['MANHA', 'TARDE', 'NOITE'], {
+      message: 'Por favor, selecione um período.',
+    }),
+    startDate: z.string().min(1, 'A data de início é obrigatória.'),
+    endDate: z.string().min(1, 'A data de término é obrigatória.'),
+    weekdays: z
+      .array(z.number())
+      .min(1, 'Selecione pelo menos um dia da semana.'),
+    userId: z.string().optional(),
+  })
+  .refine((data) => new Date(data.endDate) >= new Date(data.startDate), {
+    message: 'A data de término não pode ser anterior à data de início.',
+    path: ['endDate'],
+  });
+
+type FormData = z.infer<typeof schema>;
+
+const weekdaysOptions = [
+  { id: 1, label: 'Segunda' },
+  { id: 2, label: 'Terça' },
+  { id: 3, label: 'Quarta' },
+  { id: 4, label: 'Quinta' },
+  { id: 5, label: 'Sexta' },
+  { id: 6, label: 'Sábado' },
+];
+
 interface RecurringBookingModalProps {
   isOpen: boolean;
   onClose: () => void;
   rooms: Room[];
+  users: Pick<User, 'id' | 'name'>[];
 }
-
-const weekdaysData = [
-  { id: 1, label: 'Segunda-feira' },
-  { id: 2, label: 'Terça-feira' },
-  { id: 3, label: 'Quarta-feira' },
-  { id: 4, label: 'Quinta-feira' },
-  { id: 5, label: 'Sexta-feira' },
-  { id: 6, label: 'Sábado' },
-  { id: 0, label: 'Domingo' },
-];
-
-const recurringBookingSchema = z
-  .object({
-    roomId: z.string().min(1, 'A sala é obrigatória'),
-    classCode: z.string().min(1, 'O código da turma é obrigatório'),
-    period: z.enum(['MANHA', 'TARDE', 'NOITE'], {
-      message: 'O período é obrigatório',
-    }),
-    startDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
-      message: 'Data de início inválida',
-    }),
-    endDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
-      message: 'Data de término inválida',
-    }),
-    weekdays: z
-      .array(z.number())
-      .min(1, 'Selecione pelo menos um dia da semana'),
-  })
-  .refine((data) => new Date(data.startDate) <= new Date(data.endDate), {
-    message: 'A data de término não pode ser anterior à data de início',
-    path: ['endDate'],
-  });
-
-type RecurringBookingFormData = z.infer<typeof recurringBookingSchema>;
 
 export function RecurringBookingModal({
   isOpen,
   onClose,
   rooms,
+  users,
 }: RecurringBookingModalProps) {
   const router = useRouter();
+  const { data: session } = useSession();
+
   const {
     register,
     handleSubmit,
     control,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<RecurringBookingFormData>({
-    resolver: zodResolver(recurringBookingSchema),
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
     defaultValues: {
       weekdays: [],
+      classCode: '',
+      startDate: '',
+      endDate: '',
     },
   });
 
-  const handleClose = () => {
-    reset();
-    onClose();
-  };
-
-  const onSubmit = async (data: RecurringBookingFormData) => {
+  const handleFormSubmit = async (data: FormData) => {
     try {
       const response = await fetch('/api/bookings/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-
       const responseData = await response.json();
       if (!response.ok) {
-        throw new Error(responseData.message || 'Falha ao criar reservas');
+        throw new Error(responseData.message || 'Falha ao criar reservas.');
       }
-
       toast.success(responseData.message);
-      handleClose();
+      reset();
+      onClose();
       router.refresh();
     } catch (error) {
       toast.error((error as Error).message);
     }
   };
 
-  if (!isOpen) {
-    return null;
-  }
+  const handleClose = () => {
+    reset();
+    onClose();
+  };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-2xl rounded-lg bg-white p-8">
+      <div className="w-full max-w-lg rounded-lg bg-white p-8">
         <h2 className="mb-6 text-xl font-bold">Criar Reserva Recorrente</h2>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+          {session?.user.role === 'ADMIN' && (
             <div>
               <label
-                htmlFor="classCode"
+                htmlFor="userId"
                 className="block text-sm font-medium text-gray-700"
               >
-                Código da Turma
+                Reservar para o Utilizador
               </label>
-              <Input id="classCode" {...register('classCode')} />
-              {errors.classCode && (
-                <p className="mt-1 text-xs text-red-600">
-                  {errors.classCode.message}
-                </p>
-              )}
+              <Controller
+                name="userId"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um utilizador (opcional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users.map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Se nenhum utilizador for selecionado, a reserva será atribuída a
+                si.
+              </p>
             </div>
+          )}
+
+          <div>
+            <label
+              htmlFor="classCode"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Título / Código da Turma
+            </label>
+            <Input id="classCode" {...register('classCode')} />
+            {errors.classCode && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.classCode.message}
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label
                 htmlFor="roomId"
@@ -144,7 +182,7 @@ export function RecurringBookingModal({
                     defaultValue={field.value}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma sala" />
+                      <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
                       {rooms.map((room) => (
@@ -162,40 +200,41 @@ export function RecurringBookingModal({
                 </p>
               )}
             </div>
-          </div>
-          <div>
-            <label
-              htmlFor="period"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Período
-            </label>
-            <Controller
-              name="period"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um período" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MANHA">Manhã (07:30 - 11:30)</SelectItem>
-                    <SelectItem value="TARDE">Tarde (13:00 - 17:00)</SelectItem>
-                    <SelectItem value="NOITE">Noite (18:30 - 21:30)</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div>
+              <label
+                htmlFor="period"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Período
+              </label>
+              <Controller
+                name="period"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MANHA">Manhã</SelectItem>
+                      <SelectItem value="TARDE">Tarde</SelectItem>
+                      <SelectItem value="NOITE">Noite</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.period && (
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.period.message}
+                </p>
               )}
-            />
-            {errors.period && (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.period.message}
-              </p>
-            )}
+            </div>
           </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label
                 htmlFor="startDate"
@@ -225,40 +264,46 @@ export function RecurringBookingModal({
               )}
             </div>
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Dias da Semana
             </label>
-            <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
-              <Controller
-                name="weekdays"
-                control={control}
-                render={({ field }) => (
-                  <>
-                    {weekdaysData.map((day) => (
-                      <div key={day.id} className="flex items-center">
-                        <Checkbox
-                          id={`day-${day.id}`}
-                          checked={field.value?.includes(day.id)}
-                          onCheckedChange={(checked) => {
-                            const newValue = checked
-                              ? [...field.value, day.id]
-                              : field.value?.filter((id) => id !== day.id);
-                            field.onChange(newValue);
-                          }}
-                        />
-                        <label
-                          htmlFor={`day-${day.id}`}
-                          className="ml-2 text-sm"
-                        >
-                          {day.label}
-                        </label>
-                      </div>
-                    ))}
-                  </>
-                )}
-              />
-            </div>
+
+            <Controller
+              name="weekdays"
+              control={control}
+              render={({ field }) => (
+                <div className="mt-2 grid grid-cols-3 gap-4 sm:grid-cols-6">
+                  {weekdaysOptions.map((day) => (
+                    <div key={day.id} className="flex items-center">
+                      <Checkbox
+                        id={`weekday-${day.id}`}
+                        checked={field.value?.includes(day.id)}
+                        onCheckedChange={(checked) => {
+                          const currentWeekdays = field.value || [];
+                          if (checked) {
+                            field.onChange([...currentWeekdays, day.id]);
+                          } else {
+                            field.onChange(
+                              currentWeekdays.filter(
+                                (value) => value !== day.id,
+                              ),
+                            );
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor={`weekday-${day.id}`}
+                        className="ml-2 text-sm text-gray-700"
+                      >
+                        {day.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            />
             {errors.weekdays && (
               <p className="mt-1 text-xs text-red-600">
                 {errors.weekdays.message}
@@ -266,12 +311,12 @@ export function RecurringBookingModal({
             )}
           </div>
 
-          <div className="mt-6 flex justify-end gap-4">
+          <div className="mt-6 flex justify-end gap-4 pt-4">
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancelar
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'A criar...' : 'Criar Reservas'}
+              {isSubmitting ? 'A criar reservas...' : 'Criar Reservas'}
             </Button>
           </div>
         </form>

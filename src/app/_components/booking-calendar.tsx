@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Room } from '@prisma/client';
+import { Room, User } from '@prisma/client';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 
@@ -16,6 +16,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 
+import { RecurringBookingModal } from './recurring-booking-modal';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import {
@@ -25,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
-import { RecurringBookingModal } from './recurring-booking-modal';
 
 const bookingFormSchema = z.object({
   title: z.string().min(3, 'O título é obrigatório'),
@@ -36,11 +36,13 @@ type BookingFormData = z.infer<typeof bookingFormSchema>;
 interface BookingCalendarProps {
   initialEvents: EventInput[];
   rooms: Room[];
+  users: Pick<User, 'id' | 'name'>[];
 }
 
 export default function BookingCalendar({
   initialEvents,
   rooms,
+  users,
 }: BookingCalendarProps) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -171,7 +173,7 @@ export default function BookingCalendar({
         .fc .fc-toolbar-title {
           font-size: 1.25rem;
           font-weight: 600;
-          text-transform: capitalize;
+          text-transform: uppercase;
         }
         .fc .fc-button {
           padding: 0.5rem 1rem;
@@ -235,6 +237,7 @@ export default function BookingCalendar({
         isOpen={isRecurringModalOpen}
         onClose={() => setIsRecurringModalOpen(false)}
         rooms={rooms}
+        users={users} // <-- Passando a lista de utilizadores para o modal
       />
 
       {/* --- Modal de Edição de Reserva --- */}
@@ -323,17 +326,19 @@ export default function BookingCalendar({
               <p>
                 <strong>Início:</strong>{' '}
                 {selectedEvent.event.start?.toLocaleString('pt-BR', {
-                  timeZone: 'America/Sao_Paulo',
+                  dateStyle: 'short',
+                  timeStyle: 'short',
                 })}
               </p>
               <p>
                 <strong>Fim:</strong>{' '}
                 {selectedEvent.event.end?.toLocaleString('pt-BR', {
-                  timeZone: 'America/Sao_Paulo',
+                  dateStyle: 'short',
+                  timeStyle: 'short',
                 })}
               </p>
               <p>
-                <strong>Reservado por:</strong>{' '}
+                <strong>Reservado para:</strong>{' '}
                 {selectedEvent.event.extendedProps.userName}
               </p>
             </div>

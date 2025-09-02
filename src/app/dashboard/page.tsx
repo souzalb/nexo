@@ -4,7 +4,7 @@ import { authOptions } from '../api/auth/[...nextauth]/route';
 import { redirect } from 'next/navigation';
 import { db } from '../_lib/prisma';
 import BookingCalendar from '../_components/booking-calendar';
-import { Room } from '@prisma/client';
+import { Room, User } from '@prisma/client';
 import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
 import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
@@ -38,6 +38,14 @@ async function getRooms(): Promise<Room[]> {
   return rooms;
 }
 
+async function getUsers(): Promise<Pick<User, 'id' | 'name'>[]> {
+  const users = await db.user.findMany({
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true }, // Selecionamos apenas os campos necessários
+  });
+  return users;
+}
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect('/login');
@@ -45,6 +53,7 @@ export default async function DashboardPage() {
   // Buscamos tanto os eventos quanto as salas
   const initialEvents = await getBookings();
   const rooms = await getRooms();
+  const users = await getUsers();
 
   return (
     <SidebarProvider
@@ -59,7 +68,11 @@ export default async function DashboardPage() {
       <SidebarInset>
         <SiteHeader />
         <div className="container mx-auto p-4 md:p-8">
-          <BookingCalendar initialEvents={initialEvents} rooms={rooms} />
+          <BookingCalendar
+            initialEvents={initialEvents}
+            rooms={rooms}
+            users={users}
+          />
         </div>
       </SidebarInset>
     </SidebarProvider>
