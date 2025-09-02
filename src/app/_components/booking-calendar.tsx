@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from './ui/select';
 import { IconCalendarPlus } from '@tabler/icons-react';
+import { CalendarFilters } from './calendar-filters';
 
 const bookingFormSchema = z.object({
   title: z.string().min(3, 'O título é obrigatório'),
@@ -208,7 +209,7 @@ export default function BookingCalendar({
           Criar Reserva
         </Button>
       </div>
-
+      <CalendarFilters rooms={rooms} users={users} />
       <div className="rounded-lg border bg-white p-0 shadow-sm md:p-4">
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}

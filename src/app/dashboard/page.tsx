@@ -4,10 +4,11 @@ import { redirect } from 'next/navigation';
 
 import { Period, Room, User } from '@prisma/client';
 import { db } from '../_lib/prisma';
-import BookingCalendar from '../_components/booking-calendar';
-import { AppSidebar } from '../_components/app-sidebar';
 import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
+import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
+import BookingCalendar from '../_components/booking-calendar';
+import { CalendarFilters } from '../_components/calendar-filters';
 
 // Função para mapear o período a um conjunto de cores
 const getPeriodColors = (period: Period | null) => {
@@ -26,12 +27,30 @@ const getPeriodColors = (period: Period | null) => {
   }
 };
 
-// Função para buscar e formatar os dados no servidor
-async function getBookings() {
+// Função de busca atualizada para aceitar e aplicar filtros
+async function getBookings(filters: {
+  roomId?: string;
+  period?: Period;
+  userId?: string;
+}) {
+  const whereClause: {
+    roomId?: string;
+    period?: Period;
+    userId?: string;
+  } = {};
+
+  if (filters.roomId) whereClause.roomId = filters.roomId;
+  if (filters.period) whereClause.period = filters.period;
+  if (filters.userId) whereClause.userId = filters.userId;
+
   const bookings = await db.booking.findMany({
+    where: whereClause,
     include: {
       user: { select: { name: true } },
       room: { select: { name: true } },
+    },
+    orderBy: {
+      startTime: 'asc',
     },
   });
 
@@ -40,7 +59,7 @@ async function getBookings() {
     title: `${booking.title} (${booking.room.name})`,
     start: booking.startTime,
     end: booking.endTime,
-    ...getPeriodColors(booking.period), // Atribui as cores aqui
+    ...getPeriodColors(booking.period),
     extendedProps: {
       userName: booking.user.name,
       roomName: booking.room.name,
@@ -56,20 +75,36 @@ async function getRooms(): Promise<Room[]> {
 }
 
 async function getUsers(): Promise<Pick<User, 'id' | 'name'>[]> {
-  const users = await db.user.findMany({
+  return db.user.findMany({
     orderBy: { name: 'asc' },
     select: { id: true, name: true },
   });
-  return users;
 }
 
-export default async function DashboardPage() {
+// A página agora aceita `searchParams` para ler os filtros da URL
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: {
+    roomId?: string;
+    period?: string;
+    userId?: string;
+  };
+}) {
   const session = await getServerSession(authOptions);
   if (!session) redirect('/login');
 
-  const initialEvents = await getBookings();
-  const rooms = await getRooms();
-  const users = await getUsers();
+  const filters = {
+    roomId: searchParams?.roomId,
+    period: searchParams?.period as Period | undefined,
+    userId: searchParams?.userId,
+  };
+
+  const [initialEvents, rooms, users] = await Promise.all([
+    getBookings(filters),
+    getRooms(),
+    getUsers(),
+  ]);
 
   return (
     <SidebarProvider
