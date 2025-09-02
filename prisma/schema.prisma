@@ -35,28 +35,30 @@ model Room {
 }
 
 model Booking {
-  id        String   @id @default(cuid())
+  id        String        @id @default(cuid())
   title     String
   startTime DateTime
   endTime   DateTime
   status    BookingStatus @default(CONFIRMED)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  period    Period        @default(MANHA)
 
   // --- CAMPOS PARA RESERVAS RECORRENTES ---
   classCode      String? // Código da turma (opcional para reservas únicas)
   bookingGroupId String? // ID para agrupar reservas da mesma turma
 
   // Chaves estrangeiras e Relações
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  roomId    String
-  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@index([roomId, startTime, endTime])
   @@index([bookingGroupId]) // Adicionar um índice para facilitar a busca por grupo
 }
+
 enum Role {
   TEACHER
   MANAGER
@@ -67,4 +69,10 @@ enum BookingStatus {
   CONFIRMED
   PENDING
   CANCELLED
+}
+
+enum Period {
+  MANHA
+  TARDE
+  NOITE
 }

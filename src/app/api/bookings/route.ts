@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { z } from 'zod';
+
+import { Period } from '@prisma/client';
 import { authOptions } from '../auth/[...nextauth]/route';
 import { db } from '@/app/_lib/prisma';
 
@@ -46,14 +48,17 @@ export async function POST(req: Request) {
       roomId: string;
       classCode: string;
       bookingGroupId: string;
+      period: Period;
     }[] = [];
+
+    const user = await db.user.findUnique({
+      where: { id: targetUserId },
+    });
 
     const currentDate = new Date(startDate);
     const finalDate = new Date(endDate);
-    const user = await db.user.findUnique({ where: { id: targetUserId } });
-
     const bookingGroupId = crypto.randomUUID();
-    const title = `${classCode} - ${user?.name}`;
+    const title = `${classCode} - ${user?.name || 'Usuário Desconhecido'}`;
     const times = periodTimesUTC[period];
 
     while (currentDate <= finalDate) {
@@ -64,7 +69,6 @@ export async function POST(req: Request) {
         const endTime = new Date(currentDate);
         endTime.setUTCHours(times.end[0], times.end[1], 0, 0);
 
-        // Se a hora de término for menor que a de início, avançamos a data de término em um dia.
         if (endTime < startTime) {
           endTime.setUTCDate(endTime.getUTCDate() + 1);
         }
@@ -77,6 +81,7 @@ export async function POST(req: Request) {
           roomId,
           classCode,
           bookingGroupId,
+          period,
         });
       }
       currentDate.setUTCDate(currentDate.getUTCDate() + 1);
@@ -92,7 +97,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verifica se o utilizador já tem uma reserva no mesmo período/horário ---
     const userPeriodConflict = await db.booking.findFirst({
       where: {
         userId: targetUserId,
@@ -121,7 +125,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verificação de conflito de sala (existente)
     const roomConflict = await db.booking.findFirst({
       where: {
         roomId: roomId,
