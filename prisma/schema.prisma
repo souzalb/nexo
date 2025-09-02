@@ -49,7 +49,7 @@ model Booking {
 
   // Chaves estrangeiras e Relações
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   roomId    String
   room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)

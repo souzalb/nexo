@@ -5,6 +5,7 @@ import { authOptions } from '../auth/[...nextauth]/route';
 
 import { z } from 'zod';
 import { db } from '@/app/_lib/prisma';
+import { revalidatePath } from 'next/cache';
 
 // Schema de validação para a criação de uma sala
 const roomSchema = z.object({
@@ -22,6 +23,7 @@ const roomSchema = z.object({
 export async function POST(req: Request) {
   // 1. Verificar se o usuário é um ADMIN
   const session = await getServerSession(authOptions);
+
   if (!session || session.user.role !== 'ADMIN') {
     return NextResponse.json({ message: 'Não autorizado' }, { status: 403 });
   }
@@ -40,7 +42,7 @@ export async function POST(req: Request) {
         resources: resources || [],
       },
     });
-
+    revalidatePath('/rooms');
     return NextResponse.json(newRoom, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {

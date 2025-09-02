@@ -5,6 +5,7 @@ import { authOptions } from '../../auth/[...nextauth]/route';
 import { z } from 'zod';
 import { Role } from '@prisma/client';
 import { db } from '@/app/_lib/prisma';
+import { revalidatePath } from 'next/cache';
 
 // Schema para validar os dados da atualização
 const updateUserSchema = z.object({
@@ -94,6 +95,7 @@ export async function DELETE(
       where: { id: params.id },
     });
 
+    revalidatePath('/users');
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.log(error);

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Role } from '@prisma/client';
 import { hash } from 'bcryptjs';
 import { db } from '@/app/_lib/prisma';
+import { revalidatePath } from 'next/cache';
 
 // Schema para validar a criação de um novo usuário
 const createUserSchema = z.object({
@@ -53,6 +54,7 @@ export async function POST(req: Request) {
     // Remove a senha da resposta por segurança
     //eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...userWithoutPassword } = newUser;
+    revalidatePath('/users');
 
     return NextResponse.json(userWithoutPassword, { status: 201 });
   } catch (error) {
