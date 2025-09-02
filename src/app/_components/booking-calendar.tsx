@@ -171,6 +171,7 @@ export default function BookingCalendar({
         .fc .fc-toolbar-title {
           font-size: 1.25rem;
           font-weight: 600;
+          text-transform: capitalize;
         }
         .fc .fc-button {
           padding: 0.5rem 1rem;
@@ -207,7 +208,7 @@ export default function BookingCalendar({
       <div className="rounded-lg border bg-white p-0 shadow-sm md:p-4">
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          initialView="timeGridWeek"
+          initialView="dayGridMonth"
           headerToolbar={{
             left: 'prev,next today',
             center: 'title',
@@ -215,14 +216,15 @@ export default function BookingCalendar({
           }}
           events={initialEvents}
           locale={ptBrLocale}
+          timeZone="local"
           editable={false}
-          selectable={false} // <-- ALTERADO: Desabilita a seleção de horários
+          selectable={false}
           selectMirror={true}
           dayMaxEvents={true}
           weekends={true}
           allDaySlot={false}
           height="auto"
-          eventClick={handleEventClick} // <-- Mantido para ver detalhes
+          eventClick={handleEventClick}
           longPressDelay={1}
           eventLongPressDelay={1}
           selectLongPressDelay={1}
@@ -320,11 +322,15 @@ export default function BookingCalendar({
               </p>
               <p>
                 <strong>Início:</strong>{' '}
-                {selectedEvent.event.start?.toLocaleString()}
+                {selectedEvent.event.start?.toLocaleString('pt-BR', {
+                  timeZone: 'America/Sao_Paulo',
+                })}
               </p>
               <p>
                 <strong>Fim:</strong>{' '}
-                {selectedEvent.event.end?.toLocaleString()}
+                {selectedEvent.event.end?.toLocaleString('pt-BR', {
+                  timeZone: 'America/Sao_Paulo',
+                })}
               </p>
               <p>
                 <strong>Reservado por:</strong>{' '}

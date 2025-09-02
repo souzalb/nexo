@@ -184,7 +184,7 @@ export function RecurringBookingModal({
                   <SelectContent>
                     <SelectItem value="MANHA">Manhã (07:30 - 11:30)</SelectItem>
                     <SelectItem value="TARDE">Tarde (13:00 - 17:00)</SelectItem>
-                    <SelectItem value="NOITE">Noite (18:30 - 22:30)</SelectItem>
+                    <SelectItem value="NOITE">Noite (18:30 - 21:30)</SelectItem>
                   </SelectContent>
                 </Select>
               )}
