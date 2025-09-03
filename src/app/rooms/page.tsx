@@ -15,6 +15,7 @@ async function getRooms() {
     orderBy: { name: 'asc' },
     include: {
       resources: true, // Inclui a lista de recursos para cada sala
+      images: true, // Inclui a lista de imagens para cada sala
     },
   });
 }

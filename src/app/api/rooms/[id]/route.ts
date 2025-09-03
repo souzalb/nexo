@@ -52,7 +52,6 @@ export async function PATCH(
   }
 }
 
-// ... (A sua função DELETE continua igual)
 export async function DELETE(
   req: Request,
   { params }: { params: { id: string } },

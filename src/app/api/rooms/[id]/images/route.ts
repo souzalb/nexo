@@ -1,0 +1,42 @@
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../../auth/[...nextauth]/route';
+import { z } from 'zod';
+import { db } from '@/app/_lib/prisma';
+
+const addImageSchema = z.object({
+  url: z.string().url('Por favor, forneça um URL válido.'),
+});
+
+export async function POST(
+  req: Request,
+  { params }: { params: { id: string } },
+) {
+  const session = await getServerSession(authOptions);
+  if (session?.user.role !== 'ADMIN') {
+    return NextResponse.json({ message: 'Não autorizado' }, { status: 403 });
+  }
+
+  try {
+    const body = await req.json();
+    const { url } = addImageSchema.parse(body);
+
+    const newImage = await db.roomImage.create({
+      data: {
+        url,
+        roomId: params.id,
+      },
+    });
+
+    return NextResponse.json(newImage, { status: 201 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ message: error.message }, { status: 400 });
+    }
+    console.error('Erro ao adicionar imagem:', error);
+    return NextResponse.json(
+      { message: 'Erro ao adicionar imagem.' },
+      { status: 500 },
+    );
+  }
+}

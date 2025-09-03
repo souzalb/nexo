@@ -210,7 +210,7 @@ export default function BookingCalendar({
         </Button>
       </div>
       <CalendarFilters rooms={rooms} users={users} />
-      <div className="rounded-lg border bg-white p-0 shadow-sm md:p-4">
+      <div className="rounded-lg border p-0 shadow-sm md:p-4">
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
@@ -245,8 +245,8 @@ export default function BookingCalendar({
 
       {/* --- Modal de Edição de Reserva --- */}
       {isFormModalOpen && (
-        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-          <div className="w-full max-w-lg rounded-lg bg-white p-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-secondary w-full max-w-lg rounded-lg p-8">
             <h2 className="mb-4 text-xl font-bold">Editar Reserva</h2>
             <form
               onSubmit={handleSubmit(handleEditFormSubmit)}
@@ -319,7 +319,7 @@ export default function BookingCalendar({
 
       {/* --- Modal de Detalhes da Reserva --- */}
       {isDetailsModalOpen && selectedEvent && (
-        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-full max-w-lg rounded-lg bg-white p-8">
             <h2 className="mb-4 text-xl font-bold">Detalhes da Reserva</h2>
             <div className="space-y-2 text-sm">
