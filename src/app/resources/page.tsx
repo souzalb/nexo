@@ -1,39 +1,26 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { redirect } from 'next/navigation';
-
-import { Resource } from '@prisma/client';
 import { db } from '../_lib/prisma';
+import { ResourcesManager } from '../_components/resources-manager';
 import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
 import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
-import RoomsManager from '../_components/rooms-manager';
 
-// Busca as salas e inclui os recursos associados a cada uma
-async function getRooms() {
-  return db.room.findMany({
-    orderBy: { name: 'asc' },
-    include: {
-      resources: true, // Inclui a lista de recursos para cada sala
-    },
-  });
-}
-
-// Busca todos os recursos disponíveis para preencher o formulário
-async function getResources(): Promise<Resource[]> {
+// Busca os recursos no servidor
+async function getResources() {
   return db.resource.findMany({
     orderBy: { name: 'asc' },
   });
 }
 
-export default async function RoomsPage() {
+export default async function ResourcesPage() {
   const session = await getServerSession(authOptions);
   if (session?.user.role !== 'ADMIN') {
     redirect('/dashboard');
   }
 
-  // Busca todos os dados necessários no servidor
-  const [rooms, allResources] = await Promise.all([getRooms(), getResources()]);
+  const resources = await getResources();
 
   return (
     <SidebarProvider
@@ -47,7 +34,18 @@ export default async function RoomsPage() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <RoomsManager initialRooms={rooms} allResources={allResources} />
+        <div className="container mx-auto p-4 md:p-8">
+          <h1 className="mb-6 text-3xl font-bold text-gray-800">
+            Gestão de Recursos
+          </h1>
+          <p className="mb-6 text-gray-600">
+            Adicione, edite ou remova os recursos disponíveis nas salas (ex:
+            Projetor, Ar Condicionado).
+          </p>
+
+          {/* Componente de cliente para interatividade */}
+          <ResourcesManager initialResources={resources} />
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

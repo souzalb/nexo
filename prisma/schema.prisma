@@ -27,11 +27,20 @@ model Room {
   location  String? // O '?' torna o campo opcional
   capacity  Int
   type      String
-  resources String[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  bookings Booking[] // Uma sala pode ter várias reservas
+  bookings  Booking[] // Uma sala pode ter várias reservas
+  resources Resource[]
+}
+
+model Resource {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rooms Room[]
 }
 
 model Booking {

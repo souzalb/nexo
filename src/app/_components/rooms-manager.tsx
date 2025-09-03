@@ -1,105 +1,103 @@
-// src/components/RoomsManager.tsx
 'use client';
 
-import { useState, useEffect } from 'react'; // Adicionamos useEffect
-import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { Room } from '@prisma/client';
-import { Card, CardContent } from './ui/card';
-import Image from 'next/image';
+import { Resource } from '@prisma/client';
 import { toast } from 'sonner';
-import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Checkbox } from './ui/checkbox';
+import { IconEdit, IconTrash } from '@tabler/icons-react';
 
+// O tipo Room agora inclui a relação com os recursos
+type RoomWithResources = {
+  id: string;
+  name: string;
+  capacity: number;
+  type: string;
+  location: string | null;
+  resources: Resource[];
+};
+
+// Schema Zod para validação do formulário, agora com resourceIds
 const roomSchema = z.object({
   name: z.string().min(3, 'O nome deve ter no mínimo 3 caracteres'),
   capacity: z
     .number()
     .int()
     .positive('A capacidade deve ser um número positivo'),
-  type: z.string().min(3, 'O tipo é obrigatório'),
+  type: z.string().min(3, 'O tipo é obrigatório (Ex: Laboratório)'),
   location: z.string().optional(),
-  resources: z.array(z.string()).optional(),
+  resourceIds: z.array(z.string()).optional(),
 });
 
 type RoomFormData = z.infer<typeof roomSchema>;
 
 interface RoomsManagerProps {
-  initialRooms: Room[];
+  initialRooms: RoomWithResources[];
+  allResources: Resource[];
 }
 
-export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
+export default function RoomsManager({
+  initialRooms,
+  allResources,
+}: RoomsManagerProps) {
   const router = useRouter();
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-
-  const [currentResources, setCurrentResources] = useState<string[]>([]);
-  const [resourceInput, setResourceInput] = useState('');
+  const [selectedRoom, setSelectedRoom] = useState<RoomWithResources | null>(
+    null,
+  );
 
   const {
     register,
     handleSubmit,
     reset,
-    setValue, // Usaremos para preencher o formulário
+    setValue,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<RoomFormData>({
     resolver: zodResolver(roomSchema),
+    defaultValues: {
+      resourceIds: [],
+    },
   });
 
-  // --- Efeito para preencher o formulário quando uma sala for selecionada para edição ---
+  // Preenche o formulário quando uma sala é selecionada para edição
   useEffect(() => {
-    if (selectedRoom) {
+    if (selectedRoom && isFormModalOpen) {
       setValue('name', selectedRoom.name);
       setValue('capacity', selectedRoom.capacity);
       setValue('type', selectedRoom.type);
       setValue('location', selectedRoom.location || '');
-      setValue('resources', selectedRoom.resources); // Seta os recursos no form
-      setCurrentResources(selectedRoom.resources); // Seta os recursos no estado local para UI
+      // Mapeia os recursos da sala para uma lista de IDs para o formulário
+      setValue(
+        'resourceIds',
+        selectedRoom.resources.map((r) => r.id),
+      );
     }
   }, [selectedRoom, isFormModalOpen, setValue]);
 
-  const handleOpenFormModal = (room: Room | null) => {
-    setSelectedRoom(room); // Se for null, é modo de adição. Se tiver uma sala, é edição.
+  const handleOpenFormModal = (room: RoomWithResources | null) => {
+    setSelectedRoom(room);
     setIsFormModalOpen(true);
-  };
-
-  //Funções para manipular os recursos ---
-  const handleAddResource = () => {
-    if (
-      resourceInput.trim() !== '' &&
-      !currentResources.includes(resourceInput.trim())
-    ) {
-      const updatedResources = [...currentResources, resourceInput.trim()];
-      setCurrentResources(updatedResources);
-      setValue('resources', updatedResources); // Atualiza o valor no react-hook-form
-      setResourceInput('');
-    }
-  };
-
-  const handleRemoveResource = (resourceToRemove: string) => {
-    const updatedResources = currentResources.filter(
-      (r) => r !== resourceToRemove,
-    );
-    setCurrentResources(updatedResources);
-    setValue('resources', updatedResources); // Atualiza o valor no react-hook-form
   };
 
   const handleCloseFormModal = () => {
     setIsFormModalOpen(false);
     setSelectedRoom(null);
-    setCurrentResources([]); // Limpa os recursos locais
-    setResourceInput('');
     reset();
   };
 
-  // --- 2. HANDLER DO FORMULÁRIO ATUALIZADO (ADICIONAR E EDITAR) ---
+  // Handler unificado para submissão do formulário
   const handleFormSubmit = async (data: RoomFormData) => {
     const isEditing = !!selectedRoom;
     const url = isEditing ? `/api/rooms/${selectedRoom.id}` : '/api/rooms';
     const method = isEditing ? 'PATCH' : 'POST';
+
     try {
       const response = await fetch(url, {
         method: method,
@@ -107,287 +105,236 @@ export default function RoomsManager({ initialRooms }: RoomsManagerProps) {
         body: JSON.stringify(data),
       });
 
-      if (!response.ok)
-        throw new Error(
-          `Falha ao ${selectedRoom ? 'atualizar' : 'criar'} sala`,
-        );
+      if (!response.ok) {
+        throw new Error(`Falha ao ${isEditing ? 'atualizar' : 'criar'} sala`);
+      }
 
       toast.success(`Sala ${isEditing ? 'atualizada' : 'criada'} com sucesso!`);
       handleCloseFormModal();
-      router.refresh(); // Revalida os dados da página
-    } catch (error) {
-      toast.error((error as Error).message);
-    }
-  };
-
-  // --- 3. FUNCIONALIDADE DE EXCLUSÃO ---
-  const handleOpenDeleteModal = (room: Room) => {
-    setSelectedRoom(room);
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleCloseDeleteModal = () => {
-    setIsDeleteModalOpen(false);
-    setSelectedRoom(null);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!selectedRoom) return;
-
-    try {
-      const response = await fetch(`/api/rooms/${selectedRoom.id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message);
-      }
-      toast.success('Sala excluída com sucesso!');
-      handleCloseDeleteModal();
       router.refresh();
     } catch (error) {
       toast.error((error as Error).message);
     }
   };
 
+  const handleDelete = async (room: RoomWithResources) => {
+    toast.error(`Tem certeza que deseja excluir a sala "${room.name}"?`, {
+      action: {
+        label: 'Confirmar Exclusão',
+        onClick: async () => {
+          try {
+            const response = await fetch(`/api/rooms/${room.id}`, {
+              method: 'DELETE',
+            });
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.message);
+            }
+            toast.success('Sala excluída com sucesso!');
+            router.refresh();
+          } catch (error) {
+            toast.error((error as Error).message);
+          }
+        },
+      },
+      cancel: { label: 'Cancelar', onClick: () => {} },
+    });
+  };
+
   return (
-    <div className="rounded-lg bg-white p-6">
+    <div className="rounded-lg bg-white p-6 shadow-md">
       <div className="mb-4 flex justify-end">
-        <button
-          onClick={() => handleOpenFormModal(null)}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
-        >
+        <Button onClick={() => handleOpenFormModal(null)}>
           + Adicionar Sala
-        </button>
-      </div>
-      <div className="grid grid-cols-4 gap-5">
-        {initialRooms.map((room) => (
-          <Card key={room.id}>
-            <CardContent>
-              <div className="flex flex-col gap-5">
-                <div className="relative h-[200px] w-full rounded-4xl">
-                  <Image
-                    src="/lab1.jpg"
-                    alt="laboratorio"
-                    fill
-                    className="rounded-lg object-cover"
-                  />
-                </div>
-                <div>
-                  <p>Nome da sala: {room.name}</p>
-                  <p>Tipo: {room.type}</p>
-                  <p>Capacidade: {room.capacity} alunos</p>
-                  <p>Localização: {room.location}</p>
-                  <div className="flex gap-1">
-                    <p>Recursos:</p>
-                    {room.resources.map((resource) => (
-                      <Badge key={resource} className="rounded-2xl bg-blue-400">
-                        {resource}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleOpenFormModal(room)}
-                  className="text-indigo-600 hover:text-indigo-900"
-                >
-                  Editar
-                </button>
-                <button
-                  onClick={() => handleOpenDeleteModal(room)}
-                  className="text-red-600 hover:text-red-900"
-                >
-                  Excluir
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        </Button>
       </div>
 
-      {/* Modal do Formulário (Adicionar/Editar) */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                Nome
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                Tipo
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                Capacidade
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                Recursos
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                Ações
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 bg-white">
+            {initialRooms.map((room) => (
+              <tr key={room.id}>
+                <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-900">
+                  {room.name}
+                </td>
+                <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                  {room.type}
+                </td>
+                <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                  {room.capacity}
+                </td>
+                <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                  {room.resources.map((r) => r.name).join(', ') || '-'}
+                </td>
+                <td className="space-x-2 px-6 py-4 text-sm font-medium whitespace-nowrap">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleOpenFormModal(room)}
+                  >
+                    <IconEdit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-red-600 hover:text-red-700"
+                    onClick={() => handleDelete(room)}
+                  >
+                    <IconTrash className="h-4 w-4" />
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       {isFormModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
           <div className="w-full max-w-lg rounded-lg bg-white p-8">
-            <h2 className="mb-4 text-xl font-bold">
+            <h2 className="mb-6 text-xl font-bold">
               {selectedRoom ? 'Editar Sala' : 'Adicionar Nova Sala'}
             </h2>
             <form
               onSubmit={handleSubmit(handleFormSubmit)}
               className="space-y-4"
             >
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Nome da Sala
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  {...register('name')}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                />
-                {errors.name && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {errors.name.message}
-                  </p>
-                )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Nome da Sala
+                  </label>
+                  <Input id="name" {...register('name')} />
+                  {errors.name && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.name.message}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label
+                    htmlFor="capacity"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Capacidade
+                  </label>
+                  <Input
+                    id="capacity"
+                    type="number"
+                    {...register('capacity', { valueAsNumber: true })}
+                  />
+                  {errors.capacity && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.capacity.message}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div>
-                <label
-                  htmlFor="capacity"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Capacidade
-                </label>
-                <input
-                  id="capacity"
-                  type="number"
-                  {...register('capacity', { valueAsNumber: true })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                />
-                {errors.capacity && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {errors.capacity.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label
-                  htmlFor="type"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Tipo (Ex: Laboratório, Auditório)
-                </label>
-                <input
-                  id="type"
-                  type="text"
-                  {...register('type')}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                />
-                {errors.type && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {errors.type.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label
-                  htmlFor="location"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Localização (Opcional)
-                </label>
-                <input
-                  id="location"
-                  type="text"
-                  {...register('location')}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                />
-                {errors.location && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {errors.location.message}
-                  </p>
-                )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="type"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Tipo (Ex: Laboratório)
+                  </label>
+                  <Input id="type" {...register('type')} />
+                  {errors.type && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.type.message}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label
+                    htmlFor="location"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Localização (Opcional)
+                  </label>
+                  <Input id="location" {...register('location')} />
+                </div>
               </div>
 
               <div>
-                <label
-                  htmlFor="resources"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label className="block text-sm font-medium text-gray-700">
                   Recursos
                 </label>
-                <div className="mt-1 flex rounded-md shadow-sm">
-                  <input
-                    id="resource-input"
-                    type="text"
-                    value={resourceInput}
-                    onChange={(e) => setResourceInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddResource();
-                      }
-                    }}
-                    className="block w-full flex-1 rounded-none rounded-l-md border-gray-300"
-                    placeholder="Ex: Projetor"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddResource}
-                    className="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500 hover:bg-gray-100"
-                  >
-                    Adicionar
-                  </button>
-                </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {currentResources.map((resource, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center gap-x-1.5 rounded-md bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700"
-                    >
-                      {resource}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveResource(resource)}
-                        className="text-blue-700 hover:text-blue-900"
-                      >
-                        &times;
-                      </button>
-                    </span>
-                  ))}
-                </div>
+                <Controller
+                  name="resourceIds"
+                  control={control}
+                  render={({ field }) => (
+                    <div className="mt-2 grid grid-cols-2 gap-4 rounded-md border p-4">
+                      {allResources.map((resource) => (
+                        <div key={resource.id} className="flex items-center">
+                          <Checkbox
+                            id={`resource-${resource.id}`}
+                            checked={field.value?.includes(resource.id)}
+                            onCheckedChange={(checked) => {
+                              const currentIds = field.value || [];
+                              if (checked) {
+                                field.onChange([...currentIds, resource.id]);
+                              } else {
+                                field.onChange(
+                                  currentIds.filter((id) => id !== resource.id),
+                                );
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor={`resource-${resource.id}`}
+                            className="ml-2 text-sm text-gray-700"
+                          >
+                            {resource.name}
+                          </label>
+                        </div>
+                      ))}
+                      {allResources.length === 0 && (
+                        <p className="col-span-2 text-sm text-gray-500">
+                          Nenhum recurso cadastrado. Adicione recursos na página
+                          de Gestão de Recursos.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                />
               </div>
 
               <div className="mt-6 flex justify-end gap-4">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={handleCloseFormModal}
-                  className="rounded-md bg-gray-200 px-4 py-2 hover:bg-gray-300"
                 >
                   Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:bg-indigo-300"
-                >
-                  {isSubmitting ? 'Salvando...' : 'Salvar'}
-                </button>
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'A salvar...' : 'Salvar'}
+                </Button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Confirmação de Exclusão */}
-      {isDeleteModalOpen && selectedRoom && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-lg bg-white p-8">
-            <h2 className="mb-4 text-xl font-bold">Confirmar Exclusão</h2>
-            <p>
-              Tem certeza que deseja excluir a sala &ldquo;{selectedRoom.name}
-              &rdquo;? Esta ação não pode ser desfeita.
-            </p>
-            <div className="mt-6 flex justify-end gap-4">
-              <button
-                onClick={handleCloseDeleteModal}
-                className="rounded-md bg-gray-200 px-4 py-2 hover:bg-gray-300"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                className="rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700"
-              >
-                Confirmar Exclusão
-              </button>
-            </div>
           </div>
         </div>
       )}

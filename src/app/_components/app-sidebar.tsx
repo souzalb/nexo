@@ -5,14 +5,13 @@ import {
   IconCalendarEvent,
   IconCalendarStats,
   IconCamera,
-  IconChartBar,
   IconDashboard,
   IconDatabase,
+  IconDeviceProjector,
   IconFileAi,
   IconFileDescription,
   IconFileWord,
   IconHelp,
-  IconHome,
   IconReport,
   IconSearch,
   IconSettings,
@@ -38,32 +37,25 @@ import Image from 'next/image';
 const data = {
   navMain: [
     {
-      title: 'Home',
+      title: 'Dashboard',
       url: '/',
-      icon: IconHome,
+      icon: IconDashboard,
     },
     {
       title: 'Calendário',
-      url: '/dashboard',
+      url: '/calendar',
       icon: IconCalendarEvent,
     },
     {
-      title: 'Gerenciar Salas',
+      title: 'Salas',
       url: '/rooms',
       icon: IconCalendarStats,
     },
     {
-      title: 'Dashboard',
-      url: '#',
-      icon: IconDashboard,
+      title: 'Recursos',
+      url: '/resources',
+      icon: IconDeviceProjector,
     },
-
-    {
-      title: 'Analytics',
-      url: '#',
-      icon: IconChartBar,
-    },
-
     {
       title: 'Usuários',
       url: '/users',

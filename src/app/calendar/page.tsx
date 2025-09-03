@@ -8,7 +8,6 @@ import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
 import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
 import BookingCalendar from '../_components/booking-calendar';
-import { CalendarFilters } from '../_components/calendar-filters';
 
 // Função para mapear o período a um conjunto de cores
 const getPeriodColors = (period: Period | null) => {
