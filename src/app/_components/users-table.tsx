@@ -232,6 +232,14 @@ export function UsersTable<TData, TValue>({
 
   return (
     <div className="w-full">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+          Gerenciamento de Usuários
+        </h1>
+        <p className="mb-2 text-sm text-gray-600 dark:text-gray-200">
+          Adicione, edite ou remova os usuários do sistema.
+        </p>
+      </div>
       <div className="flex items-center justify-between py-4">
         <Input
           placeholder="Filtrar por nome..."
@@ -266,16 +274,13 @@ export function UsersTable<TData, TValue>({
                 ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button
-            onClick={() => setIsAddModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-500"
-          >
+          <Button onClick={() => setIsAddModalOpen(true)}>
             <IconUserPlus />
             Adicionar Usuário
           </Button>
         </div>
       </div>
-      <div className="overflow-hidden rounded-md border">
+      <div className="overflow-hidden rounded-lg border p-4 shadow-sm">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

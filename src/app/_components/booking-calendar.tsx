@@ -154,28 +154,70 @@ export default function BookingCalendar({
   return (
     <>
       <style jsx global>{`
+        /* --- Light Mode (Padrão) --- */
         :root {
-          --fc-border-color: hsl(214.3 31.8% 91.4%);
+          --fc-border-color: hsl(214.3 31.8% 91.4%); /* slate-200 */
           --fc-daygrid-event-dot-width: 8px;
           --fc-list-event-dot-width: 8px;
+          --fc-page-bg-color: hsl(0 0% 100%); /* white */
+          --fc-list-bg-color: hsl(210 40% 98%); /* slate-50 */
+          --fc-theme-standard-body-bg-color: hsl(0 0% 100%); /* white */
         }
+
+        /* --- Dark Mode --- */
+        .dark {
+          --fc-border-color: hsl(217.2 32.6% 17.5%); /* slate-800 */
+          --fc-page-bg-color: hsl(222.2 84% 4.9%); /* slate-950 */
+          --fc-list-bg-color: hsl(222.2 47.4% 11.2%); /* slate-900 */
+          --fc-theme-standard-body-bg-color: hsl(
+            222.2 47.4% 11.2%
+          ); /* slate-900 */
+        }
+
+        /* --- Estilos do Calendário (para ambos os temas) --- */
         .fc {
+          /* Botões */
           --fc-button-bg-color: transparent;
-          --fc-button-text-color: hsl(215 20.2% 65.1%);
-          --fc-button-border-color: hsl(214.3 31.8% 91.4%);
-          --fc-button-hover-bg-color: hsl(210 40% 98%);
-          --fc-button-hover-border-color: hsl(214.3 31.8% 91.4%);
-          --fc-button-active-bg-color: hsl(210 40% 96.1%);
-          --fc-button-active-border-color: hsl(214.3 31.8% 91.4%);
-          --fc-today-bg-color: hsl(210 40% 98%);
-          --fc-event-bg-color: hsl(210 40% 96.1%);
-          --fc-event-border-color: hsl(210 40% 96.1%);
-          --fc-event-text-color: hsl(222.2 47.4% 11.2%);
+          --fc-button-text-color: hsl(215 20.2% 65.1%); /* slate-500 */
+          --fc-button-border-color: hsl(214.3 31.8% 91.4%); /* slate-200 */
+          --fc-button-hover-bg-color: hsl(210 40% 98%); /* slate-50 */
+          --fc-button-active-bg-color: hsl(210 40% 96.1%); /* slate-100 */
+
+          /* Dia de Hoje */
+          --fc-today-bg-color: hsl(210 40% 98%); /* slate-50 */
+
+          /* Eventos */
+          --fc-event-bg-color: hsl(210 40% 96.1%); /* slate-100 */
+          --fc-event-border-color: hsl(210 40% 96.1%); /* slate-100 */
+          --fc-event-text-color: hsl(222.2 47.4% 11.2%); /* slate-900 */
         }
+
+        .dark .fc {
+          /* Botões Dark */
+          --fc-button-text-color: hsl(210 40% 96.1%); /* slate-200 */
+          --fc-button-border-color: hsl(217.2 32.6% 17.5%); /* slate-800 */
+          --fc-button-hover-bg-color: hsl(
+            217.2 32.6% 22.5%
+          ); /* slate-700/800 */
+          --fc-button-active-bg-color: hsl(217.2 32.6% 27.5%); /* slate-700 */
+
+          /* Dia de Hoje Dark */
+          --fc-today-bg-color: hsl(217.2 32.6% 17.5%); /* slate-800 */
+
+          /* Eventos Dark */
+          --fc-event-bg-color: hsl(222.2 47.4% 11.2%); /* slate-900 */
+          --fc-event-border-color: hsl(217.2 32.6% 17.5%); /* slate-800 */
+          --fc-event-text-color: hsl(210 40% 98%); /* slate-50 */
+        }
+
+        /* --- Estilos estruturais (sem cor) --- */
         .fc .fc-toolbar-title {
           font-size: 1.25rem;
           font-weight: 600;
           text-transform: uppercase;
+        }
+        .dark .fc .fc-toolbar-title {
+          color: hsl(210 40% 98%); /* slate-50 */
         }
         .fc .fc-button {
           padding: 0.5rem 1rem;
@@ -196,10 +238,10 @@ export default function BookingCalendar({
 
       <div className="mb-4 flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">
-            Calendário de Reservas
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+            Gerenciamento de Reservas
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-200">
             Clique numa reserva para ver detalhes ou use o botão para criar
             reservas.
           </p>
@@ -210,7 +252,7 @@ export default function BookingCalendar({
         </Button>
       </div>
       <CalendarFilters rooms={rooms} users={users} />
-      <div className="rounded-lg border p-0 shadow-sm md:p-4">
+      <div className="rounded-lg border p-4 shadow-sm">
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,7 +11,21 @@ import { toast } from 'sonner';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Checkbox } from './ui/checkbox';
-import { IconTrash, IconX } from '@tabler/icons-react';
+import {
+  IconTrash,
+  IconX,
+  IconChevronLeft,
+  IconChevronRight,
+} from '@tabler/icons-react';
+
+// Importa os componentes do Select
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
 import { ImageUploader } from './image-uploader';
 import Image from 'next/image';
 
@@ -40,9 +54,18 @@ type RoomFormData = z.infer<typeof roomSchema>;
 interface RoomFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  room: RoomWithRelations | null | undefined; // Recebe a sala a ser editada ou null para criar
+  room: RoomWithRelations | null | undefined;
   allResources: Resource[];
 }
+
+const locationOptions = [
+  'Bloco A - Superior',
+  'Bloco A - Inferior',
+  'Bloco B - Superior',
+  'Bloco B - Inferior',
+  'Bloco C - Superior',
+  'Bloco C - Inferior',
+];
 
 export function RoomFormModal({
   isOpen,
@@ -51,9 +74,50 @@ export function RoomFormModal({
   allResources,
 }: RoomFormModalProps) {
   const router = useRouter();
-  // Este estado interno é crucial para a transição suave de "criar" para "editar"
-  // e para garantir que o modal tenha sempre os dados mais recentes.
   const [internalRoom, setInternalRoom] = useState(room);
+
+  // --- LÓGICA DO CARROSSEL ---
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkForScroll = () => {
+    const el = scrollContainerRef.current;
+    if (el) {
+      const hasOverflow = el.scrollWidth > el.clientWidth;
+      setCanScrollLeft(hasOverflow && el.scrollLeft > 0);
+      setCanScrollRight(
+        hasOverflow && el.scrollLeft < el.scrollWidth - el.clientWidth - 1,
+      );
+    }
+  };
+
+  const handleScroll = (direction: 'left' | 'right') => {
+    const el = scrollContainerRef.current;
+    if (el) {
+      const scrollAmount =
+        direction === 'left' ? -el.clientWidth : el.clientWidth;
+      el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    const checkAndUpdateScroll = () => checkForScroll();
+
+    if (el) {
+      checkAndUpdateScroll();
+      el.addEventListener('scroll', checkAndUpdateScroll);
+      window.addEventListener('resize', checkAndUpdateScroll);
+    }
+
+    return () => {
+      if (el) {
+        el.removeEventListener('scroll', checkAndUpdateScroll);
+        window.removeEventListener('resize', checkAndUpdateScroll);
+      }
+    };
+  }, [internalRoom?.images, isOpen]);
 
   const {
     register,
@@ -67,14 +131,9 @@ export function RoomFormModal({
     defaultValues: { resourceIds: [] },
   });
 
-  // Efeito ÚNICO para sincronizar o estado interno com a prop externa E preencher o formulário.
   useEffect(() => {
-    // Sincroniza o estado interno sempre que a prop externa (do pai) mudar.
-    // Isto é crucial para depois de um router.refresh().
     setInternalRoom(room);
-
     if (room && isOpen) {
-      // Preenche o formulário com os dados da sala atual.
       setValue('name', room.name);
       setValue('capacity', room.capacity);
       setValue('type', room.type);
@@ -84,7 +143,6 @@ export function RoomFormModal({
         room.resources.map((r) => r.id),
       );
     } else {
-      // Se não houver sala (modo de criação) ou o modal fechar, limpa o formulário.
       reset();
     }
   }, [room, isOpen, setValue, reset]);
@@ -110,7 +168,6 @@ export function RoomFormModal({
         `Dados da sala ${isEditing ? 'atualizados' : 'criados'} com sucesso!`,
       );
       if (!isEditing) {
-        // Após criar, atualizamos o estado INTERNO para transformar o modal em modo de edição.
         setInternalRoom(responseData);
       }
       router.refresh();
@@ -139,7 +196,7 @@ export function RoomFormModal({
     }
   };
 
-  const handleDeleteImage = async (imageId: string) => {
+  const handleDeleteImage = (imageId: string) => {
     toast.error('Tem a certeza que deseja remover esta imagem?', {
       action: {
         label: 'Confirmar Remoção',
@@ -156,14 +213,14 @@ export function RoomFormModal({
           }
         },
       },
-      cancel: { label: 'Cancelar', onClick: () => toast.dismiss() },
+      cancel: { label: 'Cancelar', onClick: () => {} },
     });
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
       <div className="w-full max-w-2xl rounded-lg bg-white p-8">
         <div className="flex items-start justify-between">
           <h2 className="mb-6 text-xl font-bold">
@@ -234,9 +291,34 @@ export function RoomFormModal({
                 htmlFor="location"
                 className="block text-sm font-medium text-gray-700"
               >
-                Localização (Opcional)
+                Localização
               </label>
-              <Input id="location" {...register('location')} />
+              <Controller
+                name="location"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || ''}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecione um bloco" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {locationOptions.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.location && (
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.location.message}
+                </p>
+              )}
             </div>
           </div>
           <div>
@@ -291,31 +373,64 @@ export function RoomFormModal({
         {internalRoom && (
           <div className="mt-6 space-y-4 border-t pt-6">
             <h3 className="text-lg font-medium">Gerir Fotos</h3>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {internalRoom.images?.map((image) => (
-                <div key={image.id} className="group relative">
-                  <Image
-                    src={image.url}
-                    alt="Foto da sala"
-                    className="h-32 w-full rounded-md object-cover"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => handleDeleteImage(image.id)}
-                    className="absolute top-1 right-1 h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+
+            <div className="relative">
+              <div
+                ref={scrollContainerRef}
+                className="scrollbar-hide flex space-x-4 overflow-x-auto pb-2"
+              >
+                {internalRoom.images?.map((image) => (
+                  <div
+                    key={image.id}
+                    className="group relative h-48 w-48 items-center"
                   >
-                    <IconTrash size={16} />
-                  </Button>
-                </div>
-              ))}
-              {internalRoom.images?.length === 0 && (
-                <p className="col-span-full text-sm text-gray-500">
-                  Esta sala ainda não tem fotos.
-                </p>
+                    <Image
+                      src={image.url}
+                      alt="Foto da sala"
+                      className="rounded-md object-cover"
+                      fill
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleDeleteImage(image.id)}
+                      className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100"
+                    >
+                      <IconTrash size={16} />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              {canScrollLeft && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute top-1/2 left-0 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                  onClick={() => handleScroll('left')}
+                >
+                  <IconChevronLeft size={18} />
+                </Button>
+              )}
+              {canScrollRight && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute top-1/2 right-0 h-8 w-8 translate-x-1/2 -translate-y-1/2 rounded-full"
+                  onClick={() => handleScroll('right')}
+                >
+                  <IconChevronRight size={18} />
+                </Button>
               )}
             </div>
+
+            {internalRoom.images?.length === 0 && (
+              <p className="text-sm text-gray-500">
+                Esta sala ainda não tem fotos.
+              </p>
+            )}
+
             <ImageUploader onUploadSuccess={handleAddImage} />
           </div>
         )}

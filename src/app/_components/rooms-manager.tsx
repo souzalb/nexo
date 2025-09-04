@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Button } from './ui/button';
 import { RoomsTable } from './rooms-table';
 import { RoomFormModal } from './room-form-modal';
+import { IconPlus } from '@tabler/icons-react';
 
 type RoomWithRelations = {
   id: string;
@@ -75,9 +76,21 @@ export default function RoomsManager({
   };
 
   return (
-    <div className="space-y-6 p-5 px-10">
-      <div className="flex justify-end">
-        <Button onClick={() => handleOpenModal(null)}>+ Adicionar Sala</Button>
+    <div className="space-y-6">
+      <div className="mb-4 flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+            Gerenciamento de Salas
+          </h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-200">
+            Faça o gerenciamento das salas de forma eficiente ou clique no botão
+            &ldquo;Adicionar Sala&rdquo; para criar um novo ambiente!.
+          </p>
+        </div>
+        <Button onClick={() => handleOpenModal(null)}>
+          <IconPlus />
+          Adicionar Sala
+        </Button>
       </div>
 
       <RoomsTable

@@ -11,7 +11,6 @@ import {
   IconTools,
 } from '@tabler/icons-react';
 import React from 'react';
-import Autoplay from 'embla-carousel-autoplay';
 import Image from 'next/image';
 
 // Define o tipo de dados esperado pela tabela
@@ -46,34 +45,38 @@ export function RoomsTable({ rooms, onEdit, onDelete }: RoomsTableProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
       {rooms.map((room) => (
         <div
           key={room.id}
-          className="flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-shadow duration-300 hover:shadow-lg"
+          className="flex flex-col overflow-hidden rounded-lg border shadow-sm transition-shadow duration-300 hover:shadow-lg"
         >
           <div className="relative">
             <Image
               src={
                 room.images[0]?.url ||
-                'https://placehold.co/600x400/e2e8f0/64748b?text=Sem+Foto'
+                'https://res.cloudinary.com/dyychwkba/image/upload/v1756939609/9449215_ifw7kr.png'
               }
               alt={`Foto da ${room.name}`}
               className="h-56 w-full object-cover"
+              width={600}
+              height={400}
             />
           </div>
 
           <div className="flex flex-1 flex-col p-5">
             <div className="flex-1">
               <div className="flex items-start justify-between">
-                <h3 className="text-xl font-bold text-gray-900">{room.name}</h3>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  {room.name}
+                </h3>
                 <div className="flex items-center space-x-1">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => onEdit(room)}
                   >
-                    <IconEdit className="h-5 w-5 text-gray-500 hover:text-gray-800" />
+                    <IconEdit className="h-5 w-5 text-orange-500 hover:text-gray-800" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -86,13 +89,13 @@ export function RoomsTable({ rooms, onEdit, onDelete }: RoomsTableProps) {
               </div>
 
               {room.location && (
-                <p className="mt-1 flex items-center text-sm text-gray-500">
+                <p className="mt-1 flex items-center text-sm text-gray-500 dark:text-gray-100">
                   <IconMapPin className="mr-2 h-4 w-4" />
                   {room.location}
                 </p>
               )}
 
-              <div className="mt-4 flex items-center space-x-4 text-sm text-gray-600">
+              <div className="mt-4 flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-100">
                 <div className="flex items-center">
                   <IconBuildingSkyscraper className="mr-1.5 h-4 w-4" />
                   <span>{room.type}</span>
@@ -105,7 +108,7 @@ export function RoomsTable({ rooms, onEdit, onDelete }: RoomsTableProps) {
 
               {room.resources.length > 0 && (
                 <div className="mt-4">
-                  <h4 className="flex items-center text-xs font-semibold text-gray-500 uppercase">
+                  <h4 className="flex items-center text-xs font-semibold text-gray-500 uppercase dark:text-gray-100">
                     <IconTools className="mr-2 h-4 w-4" />
                     Recursos Disponíveis
                   </h4>
@@ -113,7 +116,7 @@ export function RoomsTable({ rooms, onEdit, onDelete }: RoomsTableProps) {
                     {room.resources.map((resource) => (
                       <span
                         key={resource.id}
-                        className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800"
+                        className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800 dark:bg-blue-200 dark:text-blue-900"
                       >
                         {resource.name}
                       </span>

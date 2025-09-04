@@ -135,7 +135,7 @@ export function ResourcesManager({ initialResources }: ResourcesManagerProps) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-white p-4 shadow-sm">
+      <div className="rounded-lg border p-4 shadow-sm">
         <form
           onSubmit={handleSubmitAdd(handleAddResource)}
           className="flex items-start gap-4"
@@ -160,7 +160,7 @@ export function ResourcesManager({ initialResources }: ResourcesManagerProps) {
           </Button>
         </form>
       </div>
-      <div className="rounded-lg border bg-white shadow-sm">
+      <div className="rounded-lg border shadow-sm">
         <ul className="divide-y">
           {initialResources.map((resource) => (
             <li

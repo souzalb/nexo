@@ -10,12 +10,7 @@ import {
   SelectValue,
 } from './ui/select';
 import { Button } from './ui/button';
-import {
-  IconFilter2Cancel,
-  IconFilterCancel,
-  IconFilterX,
-  IconX,
-} from '@tabler/icons-react';
+import { IconFilterX } from '@tabler/icons-react';
 
 interface CalendarFiltersProps {
   rooms: Pick<Room, 'id' | 'name'>[];
@@ -55,8 +50,8 @@ export function CalendarFilters({ rooms, users }: CalendarFiltersProps) {
     searchParams.has('userId');
 
   return (
-    <div className="mb-4 flex flex-col items-stretch gap-4 rounded-lg border bg-white p-4 shadow-sm sm:flex-row sm:items-center">
-      <span className="hidden text-sm font-semibold text-gray-700 sm:block">
+    <div className="mb-4 flex flex-col items-stretch gap-4 rounded-lg border p-4 shadow-sm sm:flex-row sm:items-center">
+      <span className="hidden text-sm font-semibold text-gray-700 sm:block dark:text-gray-100">
         Filtros:
       </span>
       <div className="grid flex-grow grid-cols-1 gap-4 sm:grid-cols-3">
@@ -100,10 +95,10 @@ export function CalendarFilters({ rooms, users }: CalendarFiltersProps) {
           onValueChange={(value) => handleFilterChange('userId', value)}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Todos os Utilizadores" />
+            <SelectValue placeholder="Todos os Usuários" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os Utilizadores</SelectItem>
+            <SelectItem value="all">Todos os Usuários</SelectItem>
             {users.map((user) => (
               <SelectItem key={user.id} value={user.id}>
                 {user.name}

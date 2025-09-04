@@ -5,6 +5,7 @@ import { authOptions } from '../auth/[...nextauth]/route';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { db } from '@/app/_lib/prisma';
+import { revalidatePath } from 'next/cache';
 
 const resourceSchema = z.object({
   name: z.string().min(2, 'O nome é obrigatório'),
@@ -37,6 +38,7 @@ export async function POST(req: Request) {
     const newResource = await db.resource.create({
       data: { name },
     });
+    revalidatePath('/resources');
     return NextResponse.json(newResource, { status: 201 });
   } catch (error) {
     // Erro de validação do Zod

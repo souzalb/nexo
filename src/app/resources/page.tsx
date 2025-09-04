@@ -34,14 +34,16 @@ export default async function ResourcesPage() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="container mx-auto p-4 md:p-8">
-          <h1 className="mb-6 text-3xl font-bold text-gray-800">
-            Gestão de Recursos
-          </h1>
-          <p className="mb-6 text-gray-600">
-            Adicione, edite ou remova os recursos disponíveis nas salas (ex:
-            Projetor, Ar Condicionado).
-          </p>
+        <div className="container mx-auto py-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+              Gerenciamento de Recursos
+            </h1>
+            <p className="mb-6 text-sm text-gray-600 dark:text-gray-200">
+              Adicione, edite ou remova os recursos disponíveis nas salas (ex:
+              Projetor, Ar Condicionado).
+            </p>
+          </div>
 
           {/* Componente de cliente para interatividade */}
           <ResourcesManager initialResources={resources} />

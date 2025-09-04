@@ -48,7 +48,9 @@ export default async function RoomsPage() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <RoomsManager initialRooms={rooms} allResources={allResources} />
+        <div className="container mx-auto px-6 py-6 md:px-2 md:py-6">
+          <RoomsManager initialRooms={rooms} allResources={allResources} />
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

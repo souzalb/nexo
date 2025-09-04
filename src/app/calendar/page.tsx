@@ -117,7 +117,7 @@ export default async function DashboardPage({
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="container mx-auto p-4 md:p-8">
+        <div className="container mx-auto py-6 md:py-6">
           <BookingCalendar
             initialEvents={initialEvents}
             rooms={rooms}
