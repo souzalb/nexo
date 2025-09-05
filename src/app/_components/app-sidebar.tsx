@@ -130,7 +130,7 @@ const data = {
   documents: [
     {
       name: 'Data Library',
-      url: '#',
+      url: '/test',
       icon: IconDatabase,
     },
     {

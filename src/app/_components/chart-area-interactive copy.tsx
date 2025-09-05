@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
+
+import { useIsMobile } from '@/hooks/use-mobile'; // <-- Hook reintroduzido
 import {
   ChartConfig,
   ChartContainer,
@@ -17,22 +18,38 @@ import {
   CardTitle,
 } from './ui/card';
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
 import { Skeleton } from './ui/skeleton';
+import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 
-// 1. Configuração do gráfico para os nossos dados de "Reservas"
+// Configuração do gráfico para os nossos dados de "Reservas"
 const chartConfig = {
   reservas: {
     label: 'Reservas',
-    color: '#3b82f6', // Azul
+    color: '#3b82f6',
   },
 } satisfies ChartConfig;
 
 export function ChartAreaInteractive() {
+  const isMobile = useIsMobile(); // <-- Utiliza o hook
   const [timeRange, setTimeRange] = React.useState('30d');
   const [chartData, setChartData] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
 
-  // 2. Efeito para buscar os dados da nossa nova API sempre que o filtro de tempo mudar
+  // --- LÓGICA DE ADAPTAÇÃO MÓVEL REINTRODUZIDA ---
+  React.useEffect(() => {
+    // Define o período padrão para 7 dias em dispositivos móveis
+    if (isMobile) {
+      setTimeRange('7d');
+    }
+  }, [isMobile]);
+
   React.useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -53,23 +70,35 @@ export function ChartAreaInteractive() {
   }, [timeRange]);
 
   return (
-    <Card>
+    <Card className="@container/card">
       <CardHeader>
         <CardTitle>Novas Reservas ao Longo do Tempo</CardTitle>
         <CardDescription>
           Exibindo o número de reservas criadas por dia no período selecionado.
         </CardDescription>
         <CardAction>
+          {/* --- CONTROLOS RESPONSIVOS REINTRODUZIDOS --- */}
           <ToggleGroup
             type="single"
             value={timeRange}
             onValueChange={setTimeRange}
             variant="outline"
+            className="hidden @[540px]/card:flex" // Visível em ecrãs maiores
           >
             <ToggleGroupItem value="90d">Últimos 90 dias</ToggleGroupItem>
             <ToggleGroupItem value="30d">Últimos 30 dias</ToggleGroupItem>
             <ToggleGroupItem value="7d">Últimos 7 dias</ToggleGroupItem>
           </ToggleGroup>
+          <Select value={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger className="w-40 @[540px]/card:hidden" size="sm">
+              <SelectValue placeholder="Selecione o período" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="90d">Últimos 90 dias</SelectItem>
+              <SelectItem value="30d">Últimos 30 dias</SelectItem>
+              <SelectItem value="7d">Últimos 7 dias</SelectItem>
+            </SelectContent>
+          </Select>
         </CardAction>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
