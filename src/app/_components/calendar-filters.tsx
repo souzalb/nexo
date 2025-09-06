@@ -37,11 +37,11 @@ export function CalendarFilters({ rooms, users }: CalendarFiltersProps) {
     const search = current.toString();
     const query = search ? `?${search}` : '';
 
-    router.push(`/dashboard${query}`);
+    router.push(`/calendar${query}`);
   };
 
   const clearFilters = () => {
-    router.push('/dashboard');
+    router.push('/calendar');
   };
 
   const hasActiveFilters =
