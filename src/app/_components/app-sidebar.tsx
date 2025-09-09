@@ -161,7 +161,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   src="/nexo_header.png"
                   fill
                   alt="logo nexo"
-                  className="object-cover"
+                  className="object-cover dark:grayscale dark:invert"
                 />
               </Link>
             </SidebarMenuButton>

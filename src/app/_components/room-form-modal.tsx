@@ -279,7 +279,27 @@ export function RoomFormModal({
               >
                 Tipo (Ex: Laboratório)
               </label>
-              <Input id="type" {...register('type')} />
+              <Controller
+                name="type"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || ''}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecione um tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Laboratório">Laboratório</SelectItem>
+                      <SelectItem value="Sala de Aula">Sala de Aula</SelectItem>
+                      <SelectItem value="Auditório">Auditório</SelectItem>
+                      <SelectItem value="Outro">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+
               {errors.type && (
                 <p className="mt-1 text-xs text-red-600">
                   {errors.type.message}

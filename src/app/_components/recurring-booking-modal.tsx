@@ -120,7 +120,7 @@ export function RecurringBookingModal({
                 htmlFor="userId"
                 className="block text-sm font-medium text-gray-700"
               >
-                Reservar para o Utilizador
+                Reservar para o Usuário
               </label>
               <Controller
                 name="userId"
@@ -181,7 +181,7 @@ export function RecurringBookingModal({
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
@@ -215,7 +215,7 @@ export function RecurringBookingModal({
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
@@ -274,7 +274,7 @@ export function RecurringBookingModal({
               name="weekdays"
               control={control}
               render={({ field }) => (
-                <div className="mt-2 grid grid-cols-3 gap-4 sm:grid-cols-6">
+                <div className="mt-2 grid grid-cols-3 gap-4">
                   {weekdaysOptions.map((day) => (
                     <div key={day.id} className="flex items-center">
                       <Checkbox
