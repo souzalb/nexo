@@ -306,47 +306,47 @@ export function ReportsManager({ allUsers, allRooms }: ReportsManagerProps) {
         <CardContent className="rounded-2xl p-0">
           <div className="overflow-x-auto rounded-2xl">
             <table className="min-w-full divide-y">
-              <thead className="bg-gray-50">
+              <thead className="dark:bg-card bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-100">
                     Título
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-100">
                     Cód. Turma
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-100">
                     Sala
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-100">
                     Usuário
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-100">
                     Início
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-100">
                     Fim
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y bg-white">
+              <tbody className="bg-secondary divide-y">
                 {reportData.map((booking) => (
                   <tr key={booking.id}>
-                    <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-900">
+                    <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-900 dark:text-gray-100">
                       {booking.title}
                     </td>
-                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500 dark:text-gray-300">
                       {booking.classCode}
                     </td>
-                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500 dark:text-gray-300">
                       {booking.room.name}
                     </td>
-                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500 dark:text-gray-300">
                       {booking.user.name}
                     </td>
-                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500 dark:text-gray-300">
                       {new Date(booking.startTime).toLocaleString('pt-BR')}
                     </td>
-                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500 dark:text-gray-300">
                       {new Date(booking.endTime).toLocaleString('pt-BR')}
                     </td>
                   </tr>
