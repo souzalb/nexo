@@ -6,24 +6,48 @@ import { Period } from '@prisma/client';
 import { authOptions } from '../auth/[...nextauth]/route';
 import { db } from '@/app/_lib/prisma';
 
-// Schema para validar os dados de uma reserva recorrente
 const recurringBookingSchema = z.object({
   roomId: z.string(),
   classCode: z.string().min(1, 'O código da turma é obrigatório'),
-  period: z.enum(['MANHA', 'TARDE', 'NOITE']),
-  startDate: z.string(), // Espera "YYYY-MM-DD"
-  endDate: z.string(), // Espera "YYYY-MM-DD"
+  timeSlots: z
+    .array(
+      z.enum([
+        'MANHA_PRIMEIRO',
+        'MANHA_SEGUNDO',
+        'MANHA_INTEIRO',
+        'TARDE_PRIMEIRO',
+        'TARDE_SEGUNDO',
+        'TARDE_INTEIRO',
+        'NOITE_PRIMEIRO',
+        'NOITE_SEGUNDO',
+        'NOITE_INTEIRO',
+      ]),
+    )
+    .min(1, 'Selecione pelo menos um horário.'),
+  startDate: z.string(),
+  endDate: z.string(),
   weekdays: z.array(z.number().min(0).max(6)),
   userId: z.string().optional(),
 });
 
-// Mapeia os períodos para horários específicos, JÁ AJUSTADOS PARA UTC-3
 const periodTimesUTC: {
-  [key: string]: { start: [number, number]; end: [number, number] };
+  [key: string]: {
+    start: [number, number];
+    end: [number, number];
+    period: Period;
+  };
 } = {
-  MANHA: { start: [10, 30], end: [14, 30] }, // 07:30-11:30 no Brasil
-  TARDE: { start: [16, 0], end: [20, 0] }, // 13:00-17:00 no Brasil
-  NOITE: { start: [21, 30], end: [0, 30] }, // 18:30-21:30 no Brasil (termina no dia seguinte em UTC)
+  MANHA_PRIMEIRO: { start: [10, 30], end: [12, 30], period: 'MANHA' }, // 07:30 - 09:30 BRT
+  MANHA_SEGUNDO: { start: [12, 30], end: [14, 30], period: 'MANHA' }, // 09:30 - 11:30 BRT
+  MANHA_INTEIRO: { start: [10, 30], end: [14, 30], period: 'MANHA' }, // 07:30 - 11:30 BRT
+
+  TARDE_PRIMEIRO: { start: [16, 0], end: [18, 0], period: 'TARDE' }, // 13:00 - 15:00 BRT
+  TARDE_SEGUNDO: { start: [18, 0], end: [20, 0], period: 'TARDE' }, // 15:00 - 17:00 BRT
+  TARDE_INTEIRO: { start: [16, 0], end: [20, 0], period: 'TARDE' }, // 13:00 - 17:00 BRT
+
+  NOITE_PRIMEIRO: { start: [21, 30], end: [23, 0], period: 'NOITE' }, // 18:30 - 20:00 BRT
+  NOITE_SEGUNDO: { start: [23, 0], end: [1, 30], period: 'NOITE' }, // 20:00 - 21:30 BRT
+  NOITE_INTEIRO: { start: [21, 30], end: [1, 30], period: 'NOITE' }, // 18:30 - 21:30 BRT
 };
 
 export async function POST(req: Request) {
@@ -34,65 +58,61 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { roomId, classCode, period, startDate, endDate, weekdays, userId } =
-      recurringBookingSchema.parse(body);
+    const {
+      roomId,
+      classCode,
+      timeSlots,
+      startDate,
+      endDate,
+      weekdays,
+      userId,
+    } = recurringBookingSchema.parse(body);
 
     const targetUserId =
       session.user.role === 'ADMIN' && userId ? userId : session.user.id;
-
-    const bookingsToCreate: {
-      title: string;
-      startTime: Date;
-      endTime: Date;
-      userId: string;
-      roomId: string;
-      classCode: string;
-      bookingGroupId: string;
-      period: Period;
-    }[] = [];
-
+    //eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const bookingsToCreate: any[] = [];
+    const bookingGroupId = crypto.randomUUID();
     const user = await db.user.findUnique({
       where: { id: targetUserId },
     });
 
+    const title = `${classCode} - ${user?.name || 'Sem Nome'}`;
     const currentDate = new Date(startDate);
     const finalDate = new Date(endDate);
-    const bookingGroupId = crypto.randomUUID();
-    const title = `${classCode} - ${user?.name || 'Usuário Desconhecido'}`;
-    const times = periodTimesUTC[period];
 
     while (currentDate <= finalDate) {
       if (weekdays.includes(currentDate.getUTCDay())) {
-        const startTime = new Date(currentDate);
-        startTime.setUTCHours(times.start[0], times.start[1], 0, 0);
+        for (const slot of timeSlots) {
+          const times = periodTimesUTC[slot];
+          const startTime = new Date(currentDate);
+          startTime.setUTCHours(times.start[0], times.start[1], 0, 0);
 
-        const endTime = new Date(currentDate);
-        endTime.setUTCHours(times.end[0], times.end[1], 0, 0);
+          const endTime = new Date(currentDate);
+          endTime.setUTCHours(times.end[0], times.end[1], 0, 0);
 
-        if (endTime < startTime) {
-          endTime.setUTCDate(endTime.getUTCDate() + 1);
+          if (endTime < startTime) {
+            endTime.setUTCDate(endTime.getUTCDate() + 1);
+          }
+
+          bookingsToCreate.push({
+            title,
+            startTime,
+            endTime,
+            userId: targetUserId,
+            roomId,
+            classCode,
+            bookingGroupId,
+            period: times.period,
+          });
         }
-
-        bookingsToCreate.push({
-          title,
-          startTime,
-          endTime,
-          userId: targetUserId,
-          roomId,
-          classCode,
-          bookingGroupId,
-          period,
-        });
       }
       currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
 
     if (bookingsToCreate.length === 0) {
       return NextResponse.json(
-        {
-          message:
-            'Nenhuma data válida encontrada para os dias da semana selecionados.',
-        },
+        { message: 'Nenhuma data válida encontrada.' },
         { status: 400 },
       );
     }
