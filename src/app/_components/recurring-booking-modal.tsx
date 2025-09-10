@@ -243,14 +243,14 @@ export function RecurringBookingModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
-      <div className="w-full max-w-lg rounded-lg bg-white p-8">
+      <div className="bg-secondary w-full max-w-lg rounded-lg p-8">
         <h2 className="mb-6 text-xl font-bold">Criar Reserva</h2>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
           {session?.user.role === 'ADMIN' && (
             <div>
               <label
                 htmlFor="userId"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-100"
               >
                 Reservar para o Usuário
               </label>
@@ -281,7 +281,7 @@ export function RecurringBookingModal({
           <div>
             <label
               htmlFor="classCode"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-100"
             >
               Título / Código da Turma
             </label>
@@ -296,7 +296,7 @@ export function RecurringBookingModal({
           <div>
             <label
               htmlFor="roomId"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-100"
             >
               Sala
             </label>
@@ -329,7 +329,7 @@ export function RecurringBookingModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-100">
               Período e Horários
             </label>
 
@@ -359,7 +359,7 @@ export function RecurringBookingModal({
               />
               <label
                 htmlFor="INTEGRAL_PERIODO"
-                className="text-sm text-gray-700"
+                className="text-sm text-gray-700 dark:text-gray-100"
               >
                 Período Integral (Manhã + Tarde)
               </label>
@@ -396,7 +396,7 @@ export function RecurringBookingModal({
                         />
                         <label
                           htmlFor={slot.id}
-                          className="ml-2 text-sm text-gray-700"
+                          className="ml-2 text-sm text-gray-700 dark:text-gray-100"
                         >
                           {slot.label}
                         </label>
@@ -416,7 +416,7 @@ export function RecurringBookingModal({
                       />
                       <label
                         htmlFor={`${periodInfo.value}_INTEIRO`}
-                        className="ml-2 text-sm font-semibold text-gray-700"
+                        className="ml-2 text-sm font-semibold text-gray-700 dark:text-gray-100"
                       >
                         Período Inteiro
                       </label>
@@ -436,7 +436,7 @@ export function RecurringBookingModal({
             <div>
               <label
                 htmlFor="startDate"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-100"
               >
                 Data de Início
               </label>
@@ -450,7 +450,7 @@ export function RecurringBookingModal({
             <div>
               <label
                 htmlFor="endDate"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-100"
               >
                 Data de Término
               </label>
@@ -464,7 +464,7 @@ export function RecurringBookingModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-100">
               Dias da Semana
             </label>
             <Controller
@@ -492,7 +492,7 @@ export function RecurringBookingModal({
                       />
                       <label
                         htmlFor={`weekday-${day.id}`}
-                        className="ml-2 text-sm text-gray-700"
+                        className="ml-2 text-sm text-gray-700 dark:text-gray-100"
                       >
                         {day.label}
                       </label>

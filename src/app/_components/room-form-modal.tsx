@@ -221,7 +221,7 @@ export function RoomFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
-      <div className="w-full max-w-2xl rounded-lg bg-white p-8">
+      <div className="bg-secondary w-full max-w-2xl rounded-lg p-8">
         <div className="flex items-start justify-between">
           <h2 className="mb-6 text-xl font-bold">
             {internalRoom ? 'Editar Sala' : 'Adicionar Nova Sala'}
@@ -241,7 +241,7 @@ export function RoomFormModal({
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-100"
               >
                 Nome da Sala
               </label>
@@ -255,7 +255,7 @@ export function RoomFormModal({
             <div>
               <label
                 htmlFor="capacity"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-100"
               >
                 Capacidade
               </label>
@@ -275,7 +275,7 @@ export function RoomFormModal({
             <div>
               <label
                 htmlFor="type"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-100"
               >
                 Tipo (Ex: Laboratório)
               </label>
@@ -309,7 +309,7 @@ export function RoomFormModal({
             <div>
               <label
                 htmlFor="location"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-100"
               >
                 Localização
               </label>
@@ -342,7 +342,7 @@ export function RoomFormModal({
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-100">
               Recursos
             </label>
             <Controller
@@ -368,14 +368,14 @@ export function RoomFormModal({
                       />
                       <label
                         htmlFor={`resource-${resource.id}`}
-                        className="ml-2 text-sm text-gray-700"
+                        className="ml-2 text-sm text-gray-700 dark:text-gray-100"
                       >
                         {resource.name}
                       </label>
                     </div>
                   ))}
                   {allResources.length === 0 && (
-                    <p className="col-span-2 text-sm text-gray-500">
+                    <p className="col-span-2 text-sm text-gray-500 dark:text-gray-400">
                       Nenhum recurso cadastrado.
                     </p>
                   )}
@@ -446,7 +446,7 @@ export function RoomFormModal({
             </div>
 
             {internalRoom.images?.length === 0 && (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-300">
                 Esta sala ainda não tem fotos.
               </p>
             )}

@@ -74,7 +74,7 @@ export function ImageUploader({ onUploadSuccess }: ImageUploaderProps) {
     <div>
       <label
         htmlFor="file-upload"
-        className="block text-sm font-medium text-gray-700"
+        className="block text-sm font-medium text-gray-700 dark:text-gray-100"
       >
         Adicionar nova imagem
       </label>
@@ -109,7 +109,9 @@ export function ImageUploader({ onUploadSuccess }: ImageUploaderProps) {
           accept="image/*"
           disabled={status === 'uploading'}
         />
-        <p className="text-xs text-gray-500">PNG, JPG, GIF até 10MB</p>
+        <p className="text-xs text-gray-500 dark:text-gray-300">
+          PNG, JPG, GIF até 10MB
+        </p>
       </div>
     </div>
   );

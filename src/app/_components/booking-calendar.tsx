@@ -297,7 +297,7 @@ export default function BookingCalendar({
               <div>
                 <label
                   htmlFor="title"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-100"
                 >
                   Título da Reserva
                 </label>
@@ -311,7 +311,7 @@ export default function BookingCalendar({
               <div>
                 <label
                   htmlFor="roomId"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-100"
                 >
                   Sala
                 </label>
@@ -362,7 +362,7 @@ export default function BookingCalendar({
       {/* --- Modal de Detalhes da Reserva --- */}
       {isDetailsModalOpen && selectedEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-lg rounded-lg bg-white p-8">
+          <div className="bg-secondary w-full max-w-lg rounded-lg p-8">
             <h2 className="mb-4 text-xl font-bold">Detalhes da Reserva</h2>
             <div className="space-y-2 text-sm">
               <p>

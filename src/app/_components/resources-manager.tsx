@@ -197,8 +197,8 @@ export function ResourcesManager({ initialResources }: ResourcesManagerProps) {
 
       {/* Modal de Edição de Recurso */}
       {isEditModalOpen && selectedResource && (
-        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-          <div className="w-full max-w-lg rounded-lg bg-white p-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-secondary w-full max-w-lg rounded-lg p-8">
             <h2 className="mb-6 text-xl font-bold">Editar Recurso</h2>
             <form
               onSubmit={handleSubmitEdit(handleEditSubmit)}
@@ -207,7 +207,7 @@ export function ResourcesManager({ initialResources }: ResourcesManagerProps) {
               <div>
                 <label
                   htmlFor="edit-name"
-                  className="block text-sm font-medium text-gray-700"
+                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-100"
                 >
                   Nome do Recurso
                 </label>

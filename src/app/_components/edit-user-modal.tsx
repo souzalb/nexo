@@ -120,7 +120,7 @@ export function EditUserModal({
           <div>
             <label
               htmlFor="name"
-              className="block text-sm font-medium text-gray-700"
+              className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-100"
             >
               Nome
             </label>
@@ -132,7 +132,7 @@ export function EditUserModal({
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
+              className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-100"
             >
               Email
             </label>
@@ -146,7 +146,7 @@ export function EditUserModal({
           <div>
             <label
               htmlFor="role"
-              className="block text-sm font-medium text-gray-700"
+              className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-100"
             >
               Permissão
             </label>
@@ -179,7 +179,7 @@ export function EditUserModal({
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
+              className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-100"
             >
               Senha
             </label>
