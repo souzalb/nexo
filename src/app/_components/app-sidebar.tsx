@@ -129,15 +129,16 @@ const data = {
   ],
   documents: [
     {
+      name: 'Relatórios',
+      url: '/reports',
+      icon: IconReport,
+    },
+    {
       name: 'Data Library',
       url: '/test',
       icon: IconDatabase,
     },
-    {
-      name: 'Reports',
-      url: '#',
-      icon: IconReport,
-    },
+
     {
       name: 'Word Assistant',
       url: '#',
