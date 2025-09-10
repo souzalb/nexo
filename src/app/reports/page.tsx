@@ -45,7 +45,7 @@ export default async function ReportsPage() {
         <div className="container mx-auto py-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-              Gerenciamento de Recursos
+              Gerenciamento de Relatórios
             </h1>
             <p className="mb-6 text-sm text-gray-600 dark:text-gray-200">
               Filtre e exporte os dados de agendamento do sistema.

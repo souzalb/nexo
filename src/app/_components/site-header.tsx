@@ -3,8 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { ModeToggle } from './mode-toggle';
 import { Separator } from './ui/separator';
-import { SidebarMenuButton, SidebarTrigger } from './ui/sidebar';
-import { IconCirclePlusFilled } from '@tabler/icons-react';
+import { SidebarTrigger } from './ui/sidebar';
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -15,6 +14,7 @@ export function SiteHeader() {
     '/resources': 'Recursos',
     '/users': 'Usuários',
     '/profile': 'Perfil',
+    '/reports': 'Relatórios',
   };
   const nameHeader = headerNames[pathname];
   return (
