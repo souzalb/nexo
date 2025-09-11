@@ -5,12 +5,23 @@ import { AuditLogManager } from '../_components/audit-log-manager';
 import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
 import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
+import { db } from '../_lib/prisma';
+import { User } from '@prisma/client';
+
+async function getUsers(): Promise<Pick<User, 'id' | 'name'>[]> {
+  return db.user.findMany({
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true },
+  });
+}
 
 export default async function AuditLogPage() {
   const session = await getServerSession(authOptions);
   if (session?.user.role !== 'ADMIN') {
     redirect('/dashboard');
   }
+
+  const users = await getUsers();
 
   return (
     <SidebarProvider
@@ -34,7 +45,7 @@ export default async function AuditLogPage() {
             </p>
           </div>
 
-          <AuditLogManager />
+          <AuditLogManager allUsers={users} />
         </div>
       </SidebarInset>
     </SidebarProvider>

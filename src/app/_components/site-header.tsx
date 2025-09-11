@@ -15,6 +15,7 @@ export function SiteHeader() {
     '/users': 'Usuários',
     '/profile': 'Perfil',
     '/reports': 'Relatórios',
+    '/logs': 'Logs',
   };
   const nameHeader = headerNames[pathname];
   return (

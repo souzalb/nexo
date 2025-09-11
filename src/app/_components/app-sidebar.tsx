@@ -10,7 +10,6 @@ import {
   IconDeviceProjector,
   IconFileAi,
   IconFileDescription,
-  IconFileWord,
   IconHelp,
   IconLogs,
   IconReport,
@@ -141,7 +140,7 @@ const data = {
     },
     {
       name: 'Data Library',
-      url: '/test',
+      url: '#',
       icon: IconDatabase,
     },
   ],
