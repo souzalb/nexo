@@ -61,6 +61,11 @@ const data = {
       url: '/users',
       icon: IconUsers,
     },
+    {
+      title: 'Minhas Reservas',
+      url: '/my-bookings',
+      icon: IconCalendarEvent,
+    },
   ],
   navClouds: [
     {

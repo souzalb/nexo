@@ -31,17 +31,13 @@ export default function RoomsManager({
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // --- CORREÇÃO 1: Guardamos apenas o ID da sala no estado ---
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 
-  // --- CORREÇÃO 2: O objeto da sala é sempre derivado das props mais recentes ---
-  // Isto garante que, após um router.refresh(), `selectedRoom` terá os novos dados.
   const selectedRoom = selectedRoomId
     ? initialRooms.find((room) => room.id === selectedRoomId)
     : null;
 
   const handleOpenModal = (room: RoomWithRelations | null) => {
-    // --- CORREÇÃO 3: Guardamos o ID, não o objeto ---
     setSelectedRoomId(room ? room.id : null);
     setIsModalOpen(true);
   };
@@ -99,7 +95,6 @@ export default function RoomsManager({
         onDelete={handleDeleteRoom}
       />
 
-      {/* O modal agora recebe o `selectedRoom` derivado e sempre atualizado */}
       <RoomFormModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}

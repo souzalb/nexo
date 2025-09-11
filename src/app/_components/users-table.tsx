@@ -88,18 +88,24 @@ function ActionsCell({ user, table }: { user: User; table: any }) {
   return (
     <div className="flex justify-end gap-2">
       <Button
+        variant="secondary"
         onClick={() => navigator.clipboard.writeText(user.id)}
-        className="bg-gray-400 hover:bg-gray-300"
+        className="text-gray-500 hover:bg-gray-50 hover:text-gray-600 sm:mt-0"
       >
         <IconCopy />
       </Button>
       <Button
+        variant="secondary"
         onClick={() => table.options.meta?.openEditModal(user)}
-        className="bg-orange-500 hover:bg-orange-400"
+        className="text-orange-500 hover:bg-orange-50 hover:text-orange-600 sm:mt-0"
       >
         <IconEdit />
       </Button>
-      <Button onClick={handleDelete} className="bg-red-600 hover:bg-red-500">
+      <Button
+        variant="secondary"
+        onClick={handleDelete}
+        className="text-red-500 hover:bg-red-50 hover:text-red-600 sm:mt-0"
+      >
         <IconTrash />
       </Button>
     </div>
