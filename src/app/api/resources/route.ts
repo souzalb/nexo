@@ -38,6 +38,14 @@ export async function POST(req: Request) {
     const newResource = await db.resource.create({
       data: { name },
     });
+
+    await db.auditLog.create({
+      data: {
+        action: 'CREATE_RESOURCE',
+        details: `O recurso "${newResource.name}" foi criado.`,
+        userId: session.user.id,
+      },
+    });
     revalidatePath('/resources');
     return NextResponse.json(newResource, { status: 201 });
   } catch (error) {

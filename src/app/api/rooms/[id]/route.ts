@@ -42,6 +42,14 @@ export async function PATCH(
       },
     });
 
+    await db.auditLog.create({
+      data: {
+        action: 'UPDATE_ROOM',
+        details: `A sala "${updatedRoom.name}" foi atualizada.`,
+        userId: session.user.id,
+      },
+    });
+
     return NextResponse.json(updatedRoom, { status: 200 });
   } catch (error) {
     console.error('ERRO AO ATUALIZAR SALA:', error);
@@ -78,8 +86,25 @@ export async function DELETE(
       );
     }
 
+    const roomToDelete = await db.room.findUnique({
+      where: { id: params.id },
+      select: { name: true },
+    });
+
+    if (!roomToDelete) {
+      return new NextResponse(null, { status: 204 });
+    }
+
     await db.room.delete({
       where: { id: params.id },
+    });
+
+    await db.auditLog.create({
+      data: {
+        action: 'DELETE_ROOM',
+        details: `A sala "${roomToDelete.name}" foi excluída.`,
+        userId: session.user.id,
+      },
     });
 
     return new NextResponse(null, { status: 204 });

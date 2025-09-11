@@ -173,6 +173,16 @@ export async function POST(req: Request) {
       data: bookingsToCreate,
     });
 
+    const room = await db.room.findUnique({ where: { id: roomId } });
+
+    await db.auditLog.create({
+      data: {
+        action: 'CREATE_BOOKING',
+        details: `${bookingsToCreate.length} ${bookingsToCreate.length > 1 ? 'reservas foram criadas para a turma' : 'reserva foi criada para a turma'} "${classCode}" na sala "${room?.name}".`,
+        userId: session.user.id,
+      },
+    });
+
     return NextResponse.json(
       { message: `${bookingsToCreate.length} reservas criadas com sucesso.` },
       { status: 201 },

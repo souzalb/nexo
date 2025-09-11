@@ -12,6 +12,7 @@ import {
   IconFileDescription,
   IconFileWord,
   IconHelp,
+  IconLogs,
   IconReport,
   IconSearch,
   IconSettings,
@@ -134,15 +135,14 @@ const data = {
       icon: IconReport,
     },
     {
+      name: 'Logs do Sistema',
+      url: '/logs',
+      icon: IconLogs,
+    },
+    {
       name: 'Data Library',
       url: '/test',
       icon: IconDatabase,
-    },
-
-    {
-      name: 'Word Assistant',
-      url: '#',
-      icon: IconFileWord,
     },
   ],
 };

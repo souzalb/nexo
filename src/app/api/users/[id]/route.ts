@@ -44,6 +44,14 @@ export async function PATCH(
       data: dataToUpdate,
     });
 
+    await db.auditLog.create({
+      data: {
+        action: 'UPDATE_USER',
+        details: `O usuário "${updatedUser.name}" foi atualizado.`,
+        userId: session.user.id,
+      },
+    });
+
     return NextResponse.json(updatedUser, { status: 200 });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -91,8 +99,21 @@ export async function DELETE(
       );
     }
 
+    const userToDelete = await db.user.findUnique({
+      where: { id: params.id },
+      select: { name: true },
+    });
+
     await db.user.delete({
       where: { id: params.id },
+    });
+
+    await db.auditLog.create({
+      data: {
+        action: 'DELETE_USER',
+        details: `O usuário "${userToDelete?.name}" foi excluído.`,
+        userId: session.user.id,
+      },
     });
 
     revalidatePath('/users');

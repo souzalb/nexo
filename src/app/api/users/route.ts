@@ -51,6 +51,14 @@ export async function POST(req: Request) {
       },
     });
 
+    await db.auditLog.create({
+      data: {
+        action: 'CREATE_USER',
+        details: `O usuário "${name}" foi criado como "${role}".`,
+        userId: session.user.id,
+      },
+    });
+
     // Remove a senha da resposta por segurança
     //eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...userWithoutPassword } = newUser;

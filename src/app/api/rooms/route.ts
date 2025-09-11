@@ -52,6 +52,14 @@ export async function POST(req: Request) {
       },
     });
 
+    await db.auditLog.create({
+      data: {
+        action: 'CREATE_ROOM',
+        details: `A sala "${newRoom.name}" com capacidade para ${newRoom.capacity} pessoas foi criada.`,
+        userId: session.user.id,
+      },
+    });
+
     // Após criar, buscamos novamente o registo completo com as relações (incluindo a lista de imagens vazia).
     const newRoomWithRelations = await db.room.findUnique({
       where: { id: newRoom.id },

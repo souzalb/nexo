@@ -5,6 +5,7 @@ import { authOptions } from '../../auth/[...nextauth]/route';
 
 import { z } from 'zod';
 import { db } from '@/app/_lib/prisma';
+import { format } from 'date-fns';
 
 // Schema para atualização de uma reserva
 const updateBookingSchema = z.object({
@@ -57,7 +58,6 @@ export async function PATCH(
     const { title, startTime, endTime, roomId } =
       updateBookingSchema.parse(body);
 
-    // 3. --- NOVA LÓGICA DE VERIFICAÇÃO DE CONFLITO ---
     // Se a sala foi alterada, precisamos verificar a disponibilidade na nova sala.
     if (roomId && roomId !== bookingToUpdate.roomId) {
       const existingBooking = await db.booking.findFirst({
@@ -87,6 +87,25 @@ export async function PATCH(
         startTime: startTime ? new Date(startTime) : undefined,
         endTime: endTime ? new Date(endTime) : undefined,
         roomId,
+      },
+    });
+
+    const room = await db.room.findUnique({
+      where: { id: bookingToUpdate.roomId },
+      select: { name: true },
+    });
+
+    await db.auditLog.create({
+      data: {
+        action: 'UPDATE_BOOKING',
+        details: `A reserva ${bookingToUpdate.title} da dia "${bookingToUpdate.startTime.toLocaleString(
+          'pt-BR',
+          {
+            dateStyle: 'short',
+            timeStyle: 'short',
+          },
+        )}" na sala "${room?.name}" foi atualizada.`,
+        userId: session.user.id,
       },
     });
 
@@ -135,6 +154,26 @@ export async function DELETE(
     await db.booking.delete({
       where: { id: params.id },
     });
+
+    const room = await db.room.findUnique({
+      where: { id: bookingToDelete.roomId },
+      select: { name: true },
+    });
+
+    await db.auditLog.create({
+      data: {
+        action: 'DELETE_BOOKING',
+        details: `A reserva ${bookingToDelete.title} da dia "${bookingToDelete.startTime.toLocaleString(
+          'pt-BR',
+          {
+            dateStyle: 'short',
+            timeStyle: 'short',
+          },
+        )}" na sala "${room?.name}" foi cancelada.`,
+        userId: session.user.id,
+      },
+    });
+
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.log('ERRO NA API:', error);

@@ -28,6 +28,14 @@ export async function PATCH(
       where: { id: params.id },
       data: { name },
     });
+
+    await db.auditLog.create({
+      data: {
+        action: 'UPDATE_RESOURCE',
+        details: `O recurso "${updatedResource.name}" foi atualizado.`,
+        userId: session.user.id,
+      },
+    });
     return NextResponse.json(updatedResource);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -75,8 +83,21 @@ export async function DELETE(
       );
     }
 
+    const resourceName = await db.resource.findUnique({
+      where: { id: params.id },
+      select: { name: true },
+    });
+
     await db.resource.delete({
       where: { id: params.id },
+    });
+
+    await db.auditLog.create({
+      data: {
+        action: 'DELETE_RESOURCE',
+        details: `O recurso "${resourceName}" foi excluído.`,
+        userId: session.user.id,
+      },
     });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
