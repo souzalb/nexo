@@ -6,7 +6,7 @@ import { SiteHeader } from './_components/site-header';
 import { SidebarInset, SidebarProvider } from './_components/ui/sidebar';
 import { authOptions } from './api/auth/[...nextauth]/route';
 import { redirect } from 'next/navigation';
-import { ChartAreaInteractive } from './_components/chart-area-interactive copy';
+import { ChartAreaInteractive } from './_components/chart-area-interactive';
 
 import { subDays } from 'date-fns';
 import { db } from './_lib/prisma';

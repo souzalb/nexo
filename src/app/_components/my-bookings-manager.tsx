@@ -24,8 +24,10 @@ import {
   IconCalendarCancel,
   IconFilter,
   IconFilterX,
+  IconX,
 } from '@tabler/icons-react';
 import { BookingWithRoom } from '../my-bookings/page';
+import { RoomDetailsModal } from './rooms-details-modal';
 
 // Define a estrutura dos dados do formulário de filtro
 type FiltersFormData = {
@@ -42,6 +44,9 @@ interface MyBookingsManagerProps {
 export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
   const router = useRouter();
   const [activeFilters, setActiveFilters] = useState<FiltersFormData>({});
+
+  // --- NOVO ESTADO PARA CONTROLAR O MODAL DE DETALHES ---
+  const [detailsRoomId, setDetailsRoomId] = useState<string | null>(null);
 
   const { register, handleSubmit, control, reset } = useForm<FiltersFormData>();
 
@@ -62,10 +67,15 @@ export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
   const filteredBookings = useMemo(() => {
     return initialBookings.filter((booking) => {
       const { startDate, endDate, roomId, classCode } = activeFilters;
-      const bookingDate = new Date(booking.startTime);
+      // Adiciona um dia à data final para garantir que o dia inteiro seja incluído na comparação
+      const inclusiveEndDate = endDate
+        ? new Date(new Date(endDate).setDate(new Date(endDate).getDate() + 1))
+        : null;
 
-      if (startDate && new Date(startDate) > bookingDate) return false;
-      if (endDate && new Date(endDate) < bookingDate) return false;
+      if (startDate && new Date(startDate) > new Date(booking.startTime))
+        return false;
+      if (inclusiveEndDate && inclusiveEndDate < new Date(booking.startTime))
+        return false;
       if (roomId && roomId !== 'all' && booking.roomId !== roomId) return false;
       if (
         classCode &&
@@ -215,10 +225,13 @@ export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
                 >
                   <div>
                     <p className="font-semibold text-gray-800">
-                      {booking.title}{' '}
-                      <span className="text-muted-foreground text-sm font-normal">
+                      {booking.title}
+                      <button
+                        onClick={() => setDetailsRoomId(booking.roomId)}
+                        className="ml-2 cursor-pointer text-sm font-normal text-gray-600 hover:underline"
+                      >
                         ({booking.room.name})
-                      </span>
+                      </button>
                     </p>
                     <p className="text-sm text-gray-600">
                       {new Date(booking.startTime).toLocaleString('pt-BR')} -{' '}
@@ -237,7 +250,7 @@ export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
               ))
             ) : (
               <p className="py-4 text-center text-sm text-gray-500">
-                Nenhuma reserva futura encontrada para os filtros selecionados.
+                Nenhuma reserva futura encontrada.
               </p>
             )}
           </ul>
@@ -258,10 +271,13 @@ export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
               pastBookings.map((booking) => (
                 <li key={booking.id} className="py-4">
                   <p className="font-semibold text-gray-800">
-                    {booking.title}{' '}
-                    <span className="text-muted-foreground text-sm font-normal">
+                    {booking.title}
+                    <button
+                      onClick={() => setDetailsRoomId(booking.roomId)}
+                      className="ml-2 text-sm font-normal text-blue-600 hover:underline"
+                    >
                       ({booking.room.name})
-                    </span>
+                    </button>
                   </p>
                   <p className="text-sm text-gray-600">
                     {new Date(booking.startTime).toLocaleString('pt-BR')}
@@ -270,13 +286,20 @@ export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
               ))
             ) : (
               <p className="py-4 text-center text-sm text-gray-500">
-                Nenhum histórico de reservas encontrado para os filtros
-                selecionados.
+                Nenhum histórico de reservas encontrado.
               </p>
             )}
           </ul>
         </CardContent>
       </Card>
+
+      {/* --- RENDERIZA O NOVO MODAL --- */}
+      <RoomDetailsModal
+        roomId={detailsRoomId}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setDetailsRoomId(null);
+        }}
+      />
     </div>
   );
 }
