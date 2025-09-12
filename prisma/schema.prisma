@@ -18,8 +18,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  bookings  Booking[] // Um usuário pode ter várias reservas
+  bookings  Booking[]
   auditLogs AuditLog[]
+  requests  BookingRequest[]
 }
 
 model AuditLog {
@@ -28,9 +29,26 @@ model AuditLog {
   details   String // Ex: "A sala 'Laboratório 1' foi criada."
   createdAt DateTime @default(now())
 
-  // Relação com o utilizador que realizou a ação
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
+}
+
+model BookingRequest {
+  id        String   @id @default(cuid())
+  roomId    String
+  classCode String
+  timeSlots String[]
+  startDate DateTime
+  endDate   DateTime
+  weekdays  Int[]
+  status    String   @default("PENDENTE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
 }
 
 model Room {
@@ -45,6 +63,7 @@ model Room {
   bookings  Booking[] // Uma sala pode ter várias reservas
   resources Resource[]
   images    RoomImage[]
+  requests  BookingRequest[]
 }
 
 model Resource {

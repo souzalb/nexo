@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import {
+  IconBellPlus,
   IconCalendarEvent,
   IconCalendarStats,
   IconCamera,
@@ -85,6 +86,11 @@ const nav = {
       title: 'Minhas Reservas',
       url: '/my-bookings',
       icon: IconCalendarEvent,
+    },
+    {
+      title: 'Solicitações de Reservas',
+      url: '/booking-requests',
+      icon: IconBellPlus,
     },
   ],
   navClouds: [

@@ -193,6 +193,9 @@ export function RecurringBookingModal({
   ].every((slot) => timeSlotsValue?.includes(slot as UiTimeSlot));
 
   const handleFormSubmit = async (data: FormData) => {
+    const isRequest = session?.user.role !== 'ADMIN';
+    const url = isRequest ? '/api/booking-requests' : '/api/bookings/';
+
     const processedSlots = new Set<ApiTimeSlot>();
     const periods: ('MANHA' | 'TARDE' | 'NOITE')[] = [
       'MANHA',
@@ -216,7 +219,7 @@ export function RecurringBookingModal({
     const payload = { ...data, timeSlots: Array.from(processedSlots) };
 
     try {
-      const response = await fetch('/api/bookings/', {
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -224,8 +227,12 @@ export function RecurringBookingModal({
       const responseData = await response.json();
       if (!response.ok)
         throw new Error(responseData.message || 'Falha ao criar reservas.');
+      toast.success(
+        isRequest
+          ? 'Solicitação de reserva enviada com sucesso!'
+          : responseData.message,
+      );
 
-      toast.success(responseData.message);
       handleClose();
       router.refresh();
     } catch (error) {

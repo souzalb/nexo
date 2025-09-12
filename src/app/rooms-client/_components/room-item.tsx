@@ -52,6 +52,8 @@ const RoomItem = ({ room }: RoomItemProps) => {
                     src={image.url}
                     alt={`Foto da sala ${room.name}`}
                     className="h-64 w-full rounded-md object-cover"
+                    width={357}
+                    height={256}
                   />
                 </CarouselItem>
               ))}

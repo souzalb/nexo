@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
-import { IconCalendarPlus } from '@tabler/icons-react';
+import { IconBellRinging, IconCalendarPlus } from '@tabler/icons-react';
 import { CalendarFilters } from './calendar-filters';
 
 const bookingFormSchema = z.object({
@@ -246,9 +246,22 @@ export default function BookingCalendar({
             reservas.
           </p>
         </div>
+        {session?.user.role === 'ADMIN' && (
+          <>
+            <Button
+              variant="outline"
+              onClick={() => router.push('/dashboard/requests')}
+            >
+              <IconBellRinging className="mr-2 h-4 w-4" />
+              Ver Solicitações
+            </Button>
+          </>
+        )}
         <Button onClick={() => setIsRecurringModalOpen(true)}>
-          <IconCalendarPlus />
-          Criar Reserva
+          <IconCalendarPlus className="mr-2 h-4 w-4" />
+          {session?.user.role === 'ADMIN'
+            ? 'Criar Reserva'
+            : 'Solicitar Reserva'}
         </Button>
       </div>
       <CalendarFilters rooms={rooms} users={users} />
