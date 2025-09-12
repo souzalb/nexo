@@ -33,8 +33,28 @@ import { NavSecondary } from './nav-secondary';
 import { NavUser } from './nav-user';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useSession } from 'next-auth/react';
 
-const data = {
+const nav = {
+  navClient: [
+    {
+      title: 'Calendário',
+      url: '/calendar',
+      icon: IconCalendarEvent,
+    },
+    {
+      title: 'Salas',
+      url: '/rooms-client',
+      icon: IconCalendarStats,
+    },
+
+    {
+      title: 'Minhas Reservas',
+      url: '/my-bookings',
+      icon: IconCalendarEvent,
+    },
+  ],
+
   navMain: [
     {
       title: 'Dashboard',
@@ -152,6 +172,8 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { data } = useSession();
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -174,9 +196,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        {data?.user.role == 'ADMIN' ? (
+          <>
+            <NavMain items={nav.navMain} />
+            <NavDocuments items={nav.documents} />
+          </>
+        ) : (
+          <>
+            <NavMain items={nav.navClient} />
+          </>
+        )}
+
+        <NavSecondary items={nav.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />
