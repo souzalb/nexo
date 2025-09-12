@@ -16,6 +16,8 @@ export function SiteHeader() {
     '/profile': 'Perfil',
     '/reports': 'Relatórios',
     '/logs': 'Logs',
+    '/my-bookings': 'Minhas Reservas',
+    '/rooms-client': 'Salas',
   };
   const nameHeader = headerNames[pathname];
   return (

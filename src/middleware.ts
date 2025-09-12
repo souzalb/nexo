@@ -22,7 +22,6 @@ export const config = {
     '/users/:path*',
     '/rooms/:path*',
     '/resources/:path*',
-    '/profile/:path*',
     '/reports/:path*',
   ],
 };

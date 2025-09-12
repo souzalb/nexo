@@ -1,40 +1,144 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { redirect } from 'next/navigation';
-
-import { Resource } from '@prisma/client';
+import { Period } from '@prisma/client';
 import { db } from '../_lib/prisma';
-import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
+import { AdminRoomFilters } from '../_components/admin-room-filters';
 import { AppSidebar } from '../_components/app-sidebar';
-import { SiteHeader } from '../_components/site-header';
 import RoomsManager from '../_components/rooms-manager';
+import { SiteHeader } from '../_components/site-header';
+import { SidebarProvider, SidebarInset } from '../_components/ui/sidebar';
 
-// Busca as salas e inclui os recursos associados a cada uma
-async function getRooms() {
+// Mapa de horários para o cálculo da disponibilidade, ajustado para UTC-3
+const periodTimesUTC: {
+  [key in Period]: { start: [number, number]; end: [number, number] };
+} = {
+  MANHA: { start: [10, 30], end: [14, 30] },
+  TARDE: { start: [16, 0], end: [20, 0] },
+  NOITE: { start: [21, 30], end: [1, 30] },
+};
+
+async function getRooms(filters: {
+  name?: string;
+  location?: string;
+  type?: string;
+  capacity?: number;
+  availabilityStartDate?: string;
+  availabilityEndDate?: string;
+  availabilityPeriod?: Period;
+}) {
+  const {
+    name,
+    location,
+    type,
+    capacity,
+    availabilityStartDate,
+    availabilityEndDate,
+    availabilityPeriod,
+  } = filters;
+  const whereClause: any = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
+  if (name) whereClause.name = { contains: name, mode: 'insensitive' };
+  if (location) whereClause.location = location;
+  if (type) whereClause.type = type;
+  if (capacity && !isNaN(capacity)) whereClause.capacity = { gte: capacity };
+
+  // Lógica de filtro de disponibilidade por intervalo
+  if (availabilityStartDate && availabilityEndDate && availabilityPeriod) {
+    const timeSlotsToCheck: { startTime: Date; endTime: Date }[] = [];
+    const currentDate = new Date(availabilityStartDate);
+    const finalDate = new Date(availabilityEndDate);
+    const times = periodTimesUTC[availabilityPeriod];
+
+    while (currentDate <= finalDate) {
+      const startTimeUTC = new Date(currentDate);
+      startTimeUTC.setUTCHours(times.start[0], times.start[1], 0, 0);
+      const endTimeUTC = new Date(currentDate);
+      endTimeUTC.setUTCHours(times.end[0], times.end[1], 0, 0);
+      if (endTimeUTC < startTimeUTC) {
+        endTimeUTC.setUTCDate(endTimeUTC.getUTCDate() + 1);
+      }
+      timeSlotsToCheck.push({ startTime: startTimeUTC, endTime: endTimeUTC });
+      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+    }
+
+    if (timeSlotsToCheck.length > 0) {
+      const unavailableRoomIdsQuery = {
+        where: {
+          OR: timeSlotsToCheck.map((slot) => ({
+            AND: [
+              { startTime: { lt: slot.endTime } },
+              { endTime: { gt: slot.startTime } },
+            ],
+          })),
+        },
+        select: { roomId: true },
+      };
+      const bookedRoomIdsPromise = db.booking.findMany(unavailableRoomIdsQuery);
+
+      const [bookedRoomIds] = await Promise.all([bookedRoomIdsPromise]);
+      const unavailableRoomIds = [
+        ...new Set([...bookedRoomIds].map((b) => b.roomId)),
+      ];
+      whereClause.id = { notIn: unavailableRoomIds };
+    }
+  }
+
   return db.room.findMany({
+    where: whereClause,
     orderBy: { name: 'asc' },
     include: {
-      resources: true, // Inclui a lista de recursos para cada sala
-      images: true, // Inclui a lista de imagens para cada sala
+      resources: true,
+      images: true,
     },
   });
 }
 
-// Busca todos os recursos disponíveis para preencher o formulário
-async function getResources(): Promise<Resource[]> {
-  return db.resource.findMany({
+async function getFilterData() {
+  const locationsPromise = db.room.findMany({
+    distinct: ['location'],
+    where: { location: { not: null } },
+    select: { location: true },
+    orderBy: { location: 'asc' },
+  });
+  const typesPromise = db.room.findMany({
+    distinct: ['type'],
+    where: { type: { not: undefined } },
+    select: { type: true },
+    orderBy: { type: 'asc' },
+  });
+  const resourcesPromise = db.resource.findMany({
     orderBy: { name: 'asc' },
   });
+  const [locations, types, allResources] = await Promise.all([
+    locationsPromise,
+    typesPromise,
+    resourcesPromise,
+  ]);
+  return {
+    allLocations: locations.map((l) => l.location!),
+    allTypes: types.map((t) => t.type!),
+    allResources,
+  };
 }
 
-export default async function RoomsPage() {
-  const session = await getServerSession(authOptions);
-  if (session?.user.role !== 'ADMIN') {
-    redirect('/dashboard');
-  }
+export default async function AdminRoomsPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | undefined };
+}) {
+  const filters = {
+    name: searchParams.name,
+    location: searchParams.location,
+    type: searchParams.type,
+    capacity: searchParams.capacity
+      ? parseInt(searchParams.capacity, 10)
+      : undefined,
+    availabilityStartDate: searchParams.availabilityStartDate,
+    availabilityEndDate: searchParams.availabilityEndDate,
+    availabilityPeriod: searchParams.availabilityPeriod as Period | undefined,
+  };
 
-  // Busca todos os dados necessários no servidor
-  const [rooms, allResources] = await Promise.all([getRooms(), getResources()]);
+  const [rooms, { allLocations, allTypes, allResources }] = await Promise.all([
+    getRooms(filters),
+    getFilterData(),
+  ]);
 
   return (
     <SidebarProvider
@@ -49,6 +153,8 @@ export default async function RoomsPage() {
       <SidebarInset>
         <SiteHeader />
         <div className="container mx-auto px-6 py-6 md:px-2 md:py-6">
+          <AdminRoomFilters allLocations={allLocations} allTypes={allTypes} />
+
           <RoomsManager initialRooms={rooms} allResources={allResources} />
         </div>
       </SidebarInset>
