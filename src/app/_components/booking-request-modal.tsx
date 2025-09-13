@@ -96,8 +96,13 @@ export function BookingRequestDetailsModal({
           <div className="flex w-full items-center justify-between">
             <span className="text-muted-foreground">Período:</span>
             <span className="col-span-2 font-medium">
-              {new Date(request.startDate).toLocaleDateString('pt-BR')} até{' '}
-              {new Date(request.endDate).toLocaleDateString('pt-BR')}
+              {new Date(request.startDate).toLocaleDateString('pt-BR', {
+                timeZone: 'UTC',
+              })}{' '}
+              até{' '}
+              {new Date(request.endDate).toLocaleDateString('pt-BR', {
+                timeZone: 'UTC',
+              })}
             </span>
           </div>
           <div className="flex w-full items-center justify-between">

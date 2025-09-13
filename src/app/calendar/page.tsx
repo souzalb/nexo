@@ -81,7 +81,7 @@ async function getUsers(): Promise<Pick<User, 'id' | 'name'>[]> {
 }
 
 // A página agora aceita `searchParams` para ler os filtros da URL
-export default async function DashboardPage({
+export default async function CalendarPage({
   searchParams,
 }: {
   searchParams?: {
@@ -98,12 +98,13 @@ export default async function DashboardPage({
     period: searchParams?.period as Period | undefined,
     userId: searchParams?.userId,
   };
+  const pendingRequestsCountPromise = db.bookingRequest.count({
+    where: { status: 'PENDENTE' },
+  });
 
-  const [initialEvents, rooms, users] = await Promise.all([
-    getBookings(filters),
-    getRooms(),
-    getUsers(),
-  ]);
+  const [initialEvents, rooms, users, pendingRequestsCount] = await Promise.all(
+    [getBookings(filters), getRooms(), getUsers(), pendingRequestsCountPromise],
+  );
 
   return (
     <SidebarProvider
@@ -122,6 +123,7 @@ export default async function DashboardPage({
             initialEvents={initialEvents}
             rooms={rooms}
             users={users}
+            pendingRequestsCount={pendingRequestsCount}
           />
         </div>
       </SidebarInset>

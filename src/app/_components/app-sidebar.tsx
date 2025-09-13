@@ -54,6 +54,11 @@ const nav = {
       url: '/my-bookings',
       icon: IconCalendarEvent,
     },
+    {
+      title: 'Minhas Solicitações',
+      url: '/my-requests',
+      icon: IconBellPlus,
+    },
   ],
 
   navMain: [
@@ -89,7 +94,7 @@ const nav = {
     },
     {
       title: 'Solicitações de Reservas',
-      url: '/booking-requests',
+      url: '/requests',
       icon: IconBellPlus,
     },
   ],

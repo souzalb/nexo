@@ -104,6 +104,7 @@ export function BookingRequestsManager({
                     <p className="text-sm">
                       {new Date(req.startDate).toLocaleString('pt-BR', {
                         dateStyle: 'short',
+                        timeZone: 'UTC',
                       })}
                     </p>
                   </div>
@@ -112,6 +113,7 @@ export function BookingRequestsManager({
                     <p className="text-sm">
                       {new Date(req.endDate).toLocaleString('pt-BR', {
                         dateStyle: 'short',
+                        timeZone: 'UTC',
                       })}
                     </p>
                   </div>

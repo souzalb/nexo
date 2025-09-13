@@ -39,12 +39,14 @@ interface BookingCalendarProps {
   initialEvents: EventInput[];
   rooms: Room[];
   users: Pick<User, 'id' | 'name'>[];
+  pendingRequestsCount: number;
 }
 
 export default function BookingCalendar({
   initialEvents,
   rooms,
   users,
+  pendingRequestsCount,
 }: BookingCalendarProps) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -246,23 +248,31 @@ export default function BookingCalendar({
             reservas.
           </p>
         </div>
-        {session?.user.role === 'ADMIN' && (
-          <>
-            <Button
-              variant="outline"
-              onClick={() => router.push('/dashboard/requests')}
-            >
-              <IconBellRinging className="mr-2 h-4 w-4" />
-              Ver Solicitações
-            </Button>
-          </>
-        )}
-        <Button onClick={() => setIsRecurringModalOpen(true)}>
-          <IconCalendarPlus className="mr-2 h-4 w-4" />
-          {session?.user.role === 'ADMIN'
-            ? 'Criar Reserva'
-            : 'Solicitar Reserva'}
-        </Button>
+        <div className="flex gap-2">
+          {session?.user.role === 'ADMIN' && (
+            <>
+              <Button
+                className="relative"
+                variant="outline"
+                onClick={() => router.push('/requests')}
+              >
+                <IconBellRinging className="mr-2 h-4 w-4" />
+                Ver Solicitações
+                {pendingRequestsCount > 0 && (
+                  <span className="absolute -top-2 -left-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
+                    {pendingRequestsCount}
+                  </span>
+                )}
+              </Button>
+            </>
+          )}
+          <Button onClick={() => setIsRecurringModalOpen(true)}>
+            <IconCalendarPlus className="mr-2 h-4 w-4" />
+            {session?.user.role === 'ADMIN'
+              ? 'Criar Reserva'
+              : 'Solicitar Reserva'}
+          </Button>
+        </div>
       </div>
       <CalendarFilters rooms={rooms} users={users} />
       <div className="rounded-lg border p-4 shadow-sm">
