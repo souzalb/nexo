@@ -2,9 +2,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { db } from '../_lib/prisma';
 import { AppSidebar } from '../_components/app-sidebar';
-import { BookingRequestsManager } from '../_components/booking-request-manager';
 import { SiteHeader } from '../_components/site-header';
 import { SidebarProvider, SidebarInset } from '../_components/ui/sidebar';
+import { BookingRequestsClient } from '../_components/booking-request-client';
 
 async function getAllRequests() {
   return db.bookingRequest.findMany({
@@ -43,7 +43,7 @@ export default async function BookingRequestsPage() {
             </p>
           </div>
 
-          <BookingRequestsManager initialRequests={requests} />
+          <BookingRequestsClient initialRequests={requests} />
         </div>
       </SidebarInset>
     </SidebarProvider>
