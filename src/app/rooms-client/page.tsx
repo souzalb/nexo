@@ -6,6 +6,7 @@ import RoomItem from './_components/room-item';
 import { Period } from '@prisma/client';
 import { db } from '../_lib/prisma';
 import { RoomFilters } from '../_components/room-filters';
+import CountRequestsPending from '../_actions/count-requests-pending';
 
 // Mapa de horários para o cálculo da disponibilidade, ajustado para UTC-3
 const periodTimesUTC: {
@@ -156,7 +157,7 @@ export default async function RoomsPage({
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader pendingRequestsCount={CountRequestsPending()} />
         <div className="container mx-auto px-4 py-4 md:px-2 md:py-4">
           <RoomFilters allLocations={allLocations} allTypes={allTypes} />
 

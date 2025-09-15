@@ -7,6 +7,7 @@ import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
 import { db } from '../_lib/prisma';
 import { User } from '@prisma/client';
+import CountRequestsPending from '../_actions/count-requests-pending';
 
 async function getUsers(): Promise<Pick<User, 'id' | 'name'>[]> {
   return db.user.findMany({
@@ -34,7 +35,7 @@ export default async function AuditLogPage() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader pendingRequestsCount={CountRequestsPending()} />
         <div className="container mx-auto py-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">

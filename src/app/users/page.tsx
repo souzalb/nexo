@@ -6,6 +6,7 @@ import { columns, UsersTable } from '../_components/users-table';
 import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
 import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
+import CountRequestsPending from '../_actions/count-requests-pending';
 
 // Função de Servidor para buscar os usuários
 async function getUsers() {
@@ -46,7 +47,7 @@ export default async function UsersPage() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader pendingRequestsCount={CountRequestsPending()} />
         <div className="container mx-auto p-6 md:px-0 md:py-6">
           <UsersTable columns={columns} data={usersData} />
         </div>

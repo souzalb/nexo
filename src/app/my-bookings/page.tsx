@@ -8,6 +8,7 @@ import { MyBookingsManager } from '../_components/my-bookings-manager';
 import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
 import { SidebarProvider, SidebarInset } from '../_components/ui/sidebar';
+import CountRequestsPending from '../_actions/count-requests-pending';
 
 // Define um tipo mais completo para os nossos dados
 export type BookingWithRoom = Booking & {
@@ -50,7 +51,7 @@ export default async function MyBookingsPage() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader pendingRequestsCount={CountRequestsPending()} />
         <div className="container mx-auto py-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">

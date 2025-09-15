@@ -6,6 +6,7 @@ import { ResourcesManager } from '../_components/resources-manager';
 import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
 import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
+import CountRequestsPending from '../_actions/count-requests-pending';
 
 // Busca os recursos no servidor
 async function getResources() {
@@ -33,7 +34,7 @@ export default async function ResourcesPage() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader pendingRequestsCount={CountRequestsPending()} />
         <div className="container mx-auto py-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">

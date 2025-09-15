@@ -6,6 +6,7 @@ import { AppSidebar } from '../_components/app-sidebar';
 import { BookingRequestsManager } from '../_components/booking-request-manager';
 import { SiteHeader } from '../_components/site-header';
 import { SidebarProvider, SidebarInset } from '../_components/ui/sidebar';
+import CountRequestsPending from '../_actions/count-requests-pending';
 
 async function getAllRequests() {
   return db.bookingRequest.findMany({
@@ -36,7 +37,7 @@ export default async function BookingRequestsPage() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader pendingRequestsCount={CountRequestsPending()} />
         <div className="container mx-auto py-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">

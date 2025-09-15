@@ -1,10 +1,9 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { db } from '../_lib/prisma';
 import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
 import { SidebarProvider, SidebarInset } from '../_components/ui/sidebar';
 import { BookingRequestsClient } from '../_components/booking-request-client';
+import CountRequestsPending from '../_actions/count-requests-pending';
 
 async function getAllRequests() {
   return db.bookingRequest.findMany({
@@ -17,8 +16,6 @@ async function getAllRequests() {
 }
 
 export default async function BookingRequestsPage() {
-  const session = await getServerSession(authOptions);
-
   const requests = await getAllRequests();
 
   return (
@@ -32,7 +29,7 @@ export default async function BookingRequestsPage() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader pendingRequestsCount={CountRequestsPending()} />
         <div className="container mx-auto py-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">

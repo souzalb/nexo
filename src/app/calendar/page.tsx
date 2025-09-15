@@ -117,7 +117,7 @@ export default async function CalendarPage({
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader pendingRequestsCount={pendingRequestsCount} />
         <div className="container mx-auto py-6 md:py-6">
           <BookingCalendar
             initialEvents={initialEvents}

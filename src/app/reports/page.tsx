@@ -6,6 +6,7 @@ import { ReportsManager } from '../_components/reports-manager';
 import { AppSidebar } from '../_components/app-sidebar';
 import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
 import { SiteHeader } from '../_components/site-header';
+import CountRequestsPending from '../_actions/count-requests-pending';
 
 // Busca os dados para os filtros no servidor
 async function getFilterData() {
@@ -41,7 +42,7 @@ export default async function ReportsPage() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader pendingRequestsCount={CountRequestsPending()} />
         <div className="container mx-auto py-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
