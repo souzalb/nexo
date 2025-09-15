@@ -251,7 +251,12 @@ export function RecurringBookingModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
       <div className="bg-secondary w-full max-w-lg rounded-lg p-8">
-        <h2 className="mb-6 text-xl font-bold">Criar Reserva</h2>
+        <h2 className="mb-6 text-xl font-bold">
+          {' '}
+          {session?.user.role === 'ADMIN'
+            ? 'Criar Reserva'
+            : 'Solicitar Reserva'}
+        </h2>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
           {session?.user.role === 'ADMIN' && (
             <div>
@@ -520,7 +525,13 @@ export function RecurringBookingModal({
               Cancelar
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'A criar...' : 'Criar Reservas'}
+              {session?.user.role === 'ADMIN'
+                ? isSubmitting
+                  ? 'Criando...'
+                  : 'Criar Reservas'
+                : isSubmitting
+                  ? 'Solicitando...'
+                  : 'Solicitar Reservas'}
             </Button>
           </div>
         </form>

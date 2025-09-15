@@ -22,11 +22,13 @@ type RoomWithRelations = {
 interface RoomsManagerProps {
   initialRooms: RoomWithRelations[];
   allResources: Resource[];
+  children: React.ReactNode;
 }
 
 export default function RoomsManager({
   initialRooms,
   allResources,
+  children,
 }: RoomsManagerProps) {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -73,7 +75,7 @@ export default function RoomsManager({
 
   return (
     <div className="space-y-6">
-      <div className="mb-4 flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex w-full items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
             Gerenciamento de Salas
@@ -88,6 +90,8 @@ export default function RoomsManager({
           Adicionar Sala
         </Button>
       </div>
+
+      {children}
 
       <RoomsTable
         rooms={initialRooms}
