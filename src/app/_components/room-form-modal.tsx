@@ -291,9 +291,13 @@ export function RoomFormModal({
                       <SelectValue placeholder="Selecione um tipo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Laboratório">Laboratório</SelectItem>
-                      <SelectItem value="Sala de Aula">Sala de Aula</SelectItem>
                       <SelectItem value="Auditório">Auditório</SelectItem>
+                      <SelectItem value="Laboratório">Laboratório</SelectItem>
+                      <SelectItem value="Laboratório de Informática">
+                        Laboratório de Informática
+                      </SelectItem>
+                      <SelectItem value="Oficina">Oficina</SelectItem>
+                      <SelectItem value="Sala de Aula">Sala de Aula</SelectItem>
                       <SelectItem value="Outro">Outro</SelectItem>
                     </SelectContent>
                   </Select>
