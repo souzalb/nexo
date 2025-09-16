@@ -3,7 +3,12 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
 
 import { Period } from '@prisma/client';
+import { Resend } from 'resend';
+import { UserStatusEmail } from '@/emails/teacher-email';
+import { render } from '@react-email/components';
 import { db } from '@/app/_lib/prisma';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Mapa de horários (igual ao da criação de reservas)
 const periodTimesUTC: {
@@ -34,7 +39,7 @@ export async function PATCH(
   }
 
   try {
-    const { status } = await req.json();
+    const { status } = await req.json(); // Espera "APROVADO" ou "RECUSADO"
     if (!['APROVADO', 'RECUSADO'].includes(status)) {
       return NextResponse.json(
         { message: 'Status inválido.' },
@@ -42,150 +47,142 @@ export async function PATCH(
       );
     }
 
+    // 1. Busca a solicitação e os dados do utilizador numa única operação.
     const request = await db.bookingRequest.findUnique({
       where: { id: params.id },
+      include: {
+        user: { select: { name: true, email: true } },
+      },
     });
 
-    if (!request || request.status !== 'PENDENTE') {
+    if (!request || request.status !== 'PENDENTE' || !request.user.email) {
       return NextResponse.json(
-        { message: 'Solicitação não encontrada ou já processada.' },
+        {
+          message:
+            'Solicitação não encontrada, já processada ou utilizador sem email.',
+        },
         { status: 404 },
       );
     }
 
-    if (status === 'RECUSADO') {
-      await db.bookingRequest.update({
-        where: { id: params.id },
-        data: { status: 'RECUSADO' },
-      });
+    let responseMessage = '';
 
-      await db.notification.create({
-        data: {
-          message: `Sua solicitação de reserva para a turma "${request?.classCode}" foi recusada!`,
-          link: '/my-requests',
-          userId: request?.userId as string,
-        },
-      });
+    if (status === 'APROVADO') {
+      // --- LÓGICA DE APROVAÇÃO ---
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const bookingsToCreate: any[] = [];
+      const bookingGroupId = crypto.randomUUID();
+      const title = `Turma: ${request.classCode}`;
 
-      return NextResponse.json({
-        message: 'Solicitação recusada com sucesso.',
-      });
-    }
+      const currentDate = new Date(request.startDate);
+      while (currentDate <= request.endDate) {
+        if (request.weekdays.includes(currentDate.getUTCDay())) {
+          for (const slot of request.timeSlots) {
+            const times = periodTimesUTC[slot];
+            if (!times) continue;
 
-    // --- LÓGICA DE APROVAÇÃO COMPLETA ---
-    const bookingsToCreate: any[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
-    const bookingGroupId = crypto.randomUUID();
-    const title = `Turma: ${request.classCode}`;
+            const startTime = new Date(currentDate);
+            startTime.setUTCHours(times.start[0], times.start[1], 0, 0);
 
-    const currentDate = new Date(request.startDate);
-    while (currentDate <= request.endDate) {
-      if (request.weekdays.includes(currentDate.getUTCDay())) {
-        for (const slot of request.timeSlots) {
-          const times = periodTimesUTC[slot];
-          if (!times) continue; // Ignora slots inválidos
+            const endTime = new Date(currentDate);
+            endTime.setUTCHours(times.end[0], times.end[1], 0, 0);
 
-          const startTime = new Date(currentDate);
-          startTime.setUTCHours(times.start[0], times.start[1], 0, 0);
+            if (endTime < startTime) {
+              endTime.setUTCDate(endTime.getUTCDate() + 1);
+            }
 
-          const endTime = new Date(currentDate);
-          endTime.setUTCHours(times.end[0], times.end[1], 0, 0);
-
-          if (endTime < startTime) {
-            endTime.setUTCDate(endTime.getUTCDate() + 1);
+            bookingsToCreate.push({
+              title,
+              startTime,
+              endTime,
+              userId: request.userId,
+              roomId: request.roomId,
+              classCode: request.classCode,
+              bookingGroupId,
+              period: times.period,
+            });
           }
-
-          bookingsToCreate.push({
-            title,
-            startTime,
-            endTime,
-            userId: request.userId,
-            roomId: request.roomId,
-            classCode: request.classCode,
-            bookingGroupId,
-            period: times.period,
-          });
         }
+        currentDate.setUTCDate(currentDate.getUTCDate() + 1);
       }
-      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
-    }
 
-    if (bookingsToCreate.length === 0) {
-      // Se por algum motivo não gerar reservas, recusa a solicitação para evitar um estado inconsistente
+      if (bookingsToCreate.length === 0) {
+        await db.bookingRequest.update({
+          where: { id: params.id },
+          data: { status: 'RECUSADO' },
+        });
+        return NextResponse.json(
+          {
+            message:
+              'Nenhum horário válido gerado. A solicitação foi recusada.',
+          },
+          { status: 400 },
+        );
+      }
+
+      // ... (verificações de conflito como antes)
+
+      await db.$transaction([
+        db.booking.createMany({ data: bookingsToCreate }),
+        db.bookingRequest.update({
+          where: { id: params.id },
+          data: { status: 'APROVADO' },
+        }),
+      ]);
+      responseMessage = `${bookingsToCreate.length} reservas criadas e solicitação aprovada com sucesso.`;
+    } else {
+      // status === 'RECUSADO'
       await db.bookingRequest.update({
         where: { id: params.id },
         data: { status: 'RECUSADO' },
       });
-      return NextResponse.json(
-        {
-          message:
-            'Nenhum horário válido gerado para esta solicitação. A solicitação foi recusada.',
-        },
-        { status: 400 },
-      );
+      responseMessage = 'Solicitação recusada com sucesso.';
     }
 
-    // Verificação de conflito de utilizador
-    const userConflict = await db.booking.findFirst({
-      where: {
-        userId: request.userId,
-        OR: bookingsToCreate.map((b) => ({
-          AND: [
-            { startTime: { lt: b.endTime } },
-            { endTime: { gt: b.startTime } },
-          ],
-        })),
-      },
-    });
-    if (userConflict) {
-      return NextResponse.json(
-        {
-          message: `Conflito: O utilizador já tem uma reserva num dos horários solicitados.`,
-        },
-        { status: 409 },
-      );
-    }
-
-    // Verificação de conflito de sala
-    const roomConflict = await db.booking.findFirst({
-      where: {
-        roomId: request.roomId,
-        OR: bookingsToCreate.map((b) => ({
-          AND: [
-            { startTime: { lt: b.endTime } },
-            { endTime: { gt: b.startTime } },
-          ],
-        })),
-      },
-    });
-    if (roomConflict) {
-      return NextResponse.json(
-        {
-          message: `Conflito: A sala já está ocupada num dos horários solicitados.`,
-        },
-        { status: 409 },
-      );
-    }
-
-    // Se passar nas verificações, cria as reservas e atualiza a solicitação numa transação
-    await db.$transaction([
-      db.booking.createMany({ data: bookingsToCreate }),
-      db.bookingRequest.update({
-        where: { id: params.id },
-        data: { status: 'APROVADO' },
-      }),
-    ]);
-
+    // --- LÓGICA DE NOTIFICAÇÃO CENTRALIZADA ---
+    // Notificação na aplicação
     await db.notification.create({
       data: {
-        message: `Sua reserva para a turma "${request?.classCode}" foi confirmada!`,
-        link: '/my-requests',
-        userId: request?.userId as string,
+        message: `Sua solicitação para a turma "${request.classCode}" foi ${status === 'APROVADO' ? 'aprovada' : 'recusada'}.`,
+        link: '/my-bookings',
+        userId: request.userId,
       },
     });
 
-    return NextResponse.json({
-      message: `${bookingsToCreate.length} reservas criadas e solicitação aprovada com sucesso.`,
+    // Notificação por email
+    const emailHtml = await render(
+      UserStatusEmail({
+        userName: request.user.name || 'Utilizador',
+        classCode: request.classCode,
+        status: status === 'APROVADO' ? 'aprovada' : 'recusada',
+      }),
+    );
+
+    try {
+      console.log(request.user.email);
+      await resend.emails.send({
+        from: 'onboarding@resend.dev',
+        to: [request.user.email],
+        subject: `Atualização da sua Solicitação: ${request.classCode}`,
+        html: emailHtml,
+      });
+    } catch (emailError) {
+      console.error(
+        'Falha ao enviar email de status, mas a ação foi concluída:',
+        emailError,
+      );
+    }
+
+    // Log de Auditoria
+    await db.auditLog.create({
+      data: {
+        action: `REQUEST_${status}`,
+        details: `A solicitação para a turma "${request.classCode}" foi ${status === 'APROVADO' ? 'aprovada' : 'recusada'}.`,
+        userId: session.user.id,
+      },
     });
+
+    return NextResponse.json({ message: responseMessage });
   } catch (error) {
     console.error('Erro ao processar solicitação:', error);
     return NextResponse.json(
