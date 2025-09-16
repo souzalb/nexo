@@ -7,6 +7,7 @@ import { SidebarTrigger } from './ui/sidebar';
 import { IconBellRinging } from '@tabler/icons-react';
 import { Button } from './ui/button';
 import { useSession } from 'next-auth/react';
+import { NotificationBell } from './notification-bell';
 
 interface SiteHeaderProps {
   pendingRequestsCount: number;
@@ -39,9 +40,10 @@ export function SiteHeader({ pendingRequestsCount }: SiteHeaderProps) {
         />
         <h1 className="text-base font-medium capitalize">{nameHeader}</h1>
         <div className="ml-auto flex items-center gap-2">
-          {session?.user.role === 'ADMIN' && (
-            <>
-              <Button
+          {/* {session?.user.role === 'ADMIN' && (
+            <> */}
+          <NotificationBell />
+          {/* <Button
                 className="relative"
                 variant="outline"
                 onClick={() => router.push('/requests')}
@@ -52,9 +54,9 @@ export function SiteHeader({ pendingRequestsCount }: SiteHeaderProps) {
                     {pendingRequestsCount}
                   </span>
                 )}
-              </Button>
-            </>
-          )}
+              </Button> */}
+          {/* </>
+          )} */}
 
           <ModeToggle />
         </div>

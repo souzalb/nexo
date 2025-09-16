@@ -24,7 +24,6 @@ const periodTimesUTC: {
   NOITE_INTEIRO: { start: [21, 30], end: [1, 30], period: 'NOITE' },
 };
 
-// PATCH /api/booking-requests/[id]  (Aprovar ou Recusar)
 export async function PATCH(
   req: Request,
   { params }: { params: { id: string } },
@@ -35,7 +34,7 @@ export async function PATCH(
   }
 
   try {
-    const { status } = await req.json(); // Espera { "status": "APROVADO" } ou { "status": "RECUSADO" }
+    const { status } = await req.json();
     if (!['APROVADO', 'RECUSADO'].includes(status)) {
       return NextResponse.json(
         { message: 'Status inválido.' },
@@ -46,6 +45,7 @@ export async function PATCH(
     const request = await db.bookingRequest.findUnique({
       where: { id: params.id },
     });
+
     if (!request || request.status !== 'PENDENTE') {
       return NextResponse.json(
         { message: 'Solicitação não encontrada ou já processada.' },
@@ -58,6 +58,15 @@ export async function PATCH(
         where: { id: params.id },
         data: { status: 'RECUSADO' },
       });
+
+      await db.notification.create({
+        data: {
+          message: `Sua solicitação de reserva para a turma "${request?.classCode}" foi recusada!`,
+          link: '/my-requests',
+          userId: request?.userId as string,
+        },
+      });
+
       return NextResponse.json({
         message: 'Solicitação recusada com sucesso.',
       });
@@ -165,6 +174,14 @@ export async function PATCH(
         data: { status: 'APROVADO' },
       }),
     ]);
+
+    await db.notification.create({
+      data: {
+        message: `Sua reserva para a turma "${request?.classCode}" foi confirmada!`,
+        link: '/my-requests',
+        userId: request?.userId as string,
+      },
+    });
 
     return NextResponse.json({
       message: `${bookingsToCreate.length} reservas criadas e solicitação aprovada com sucesso.`,

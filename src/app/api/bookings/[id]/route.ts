@@ -5,7 +5,6 @@ import { authOptions } from '../../auth/[...nextauth]/route';
 
 import { z } from 'zod';
 import { db } from '@/app/_lib/prisma';
-import { format } from 'date-fns';
 
 // Schema para atualização de uma reserva
 const updateBookingSchema = z.object({
@@ -109,6 +108,14 @@ export async function PATCH(
       },
     });
 
+    await db.notification.create({
+      data: {
+        message: `Sua reserva para a turma "${bookingToUpdate.classCode}" foi atualizada!`,
+        link: '/my-requests',
+        userId: bookingToUpdate.userId as string,
+      },
+    });
+
     return NextResponse.json(updatedBooking, { status: 200 });
   } catch (error) {
     // ... Zod e outros tratamentos de erro ...
@@ -171,6 +178,14 @@ export async function DELETE(
           },
         )}" na sala "${room?.name}" foi cancelada.`,
         userId: session.user.id,
+      },
+    });
+
+    await db.notification.create({
+      data: {
+        message: `Sua reserva para a turma "${bookingToDelete.classCode}" foi cancelada!`,
+        link: '/my-requests',
+        userId: bookingToDelete.userId as string,
       },
     });
 

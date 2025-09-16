@@ -109,6 +109,16 @@ export async function POST(req: Request) {
       },
     });
 
+    const admins = await db.user.findMany({ where: { role: 'ADMIN' } });
+
+    await db.notification.createMany({
+      data: admins.map((admin) => ({
+        message: `Nova solicitação de reserva de ${session.user.name} para a turma "${data.classCode}".`,
+        link: '/requests', // Link direto para a página de solicitações
+        userId: admin.id,
+      })),
+    });
+
     return NextResponse.json(newRequest, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -18,15 +18,29 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  bookings  Booking[]
-  auditLogs AuditLog[]
-  requests  BookingRequest[]
+  bookings      Booking[]
+  auditLogs     AuditLog[]
+  requests      BookingRequest[]
+  notifications Notification[]
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  message   String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  @@index([userId])
 }
 
 model AuditLog {
   id        String   @id @default(cuid())
-  action    String // Ex: "CREATE_ROOM", "DELETE_BOOKING"
-  details   String // Ex: "A sala 'Laboratório 1' foi criada."
+  action    String 
+  details   String 
   createdAt DateTime @default(now())
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
