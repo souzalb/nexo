@@ -111,8 +111,9 @@ const periodOptions: {
 interface RecurringBookingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  rooms: Room[];
+  rooms: Pick<Room, 'id' | 'name'>[];
   users: Pick<User, 'id' | 'name'>[];
+  initialRoomId?: string | null;
 }
 
 export function RecurringBookingModal({
@@ -120,6 +121,7 @@ export function RecurringBookingModal({
   onClose,
   rooms,
   users,
+  initialRoomId,
 }: RecurringBookingModalProps) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -138,8 +140,14 @@ export function RecurringBookingModal({
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { weekdays: [], timeSlots: [] },
+    defaultValues: { weekdays: [], timeSlots: [], roomId: initialRoomId ?? '' },
   });
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setValue('roomId', initialRoomId ? String(initialRoomId) : '');
+    }
+  }, [isOpen, initialRoomId, setValue]);
 
   const timeSlotsValue = watch('timeSlots');
 
@@ -318,7 +326,7 @@ export function RecurringBookingModal({
               render={({ field }) => (
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  value={initialRoomId ? initialRoomId : field.value}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione uma sala" />

@@ -1,12 +1,11 @@
-import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
 import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
-import RoomItem from './_components/room-item';
+import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
 
-import { Period } from '@prisma/client';
-import { db } from '../_lib/prisma';
-import { RoomFilters } from '../_components/room-filters';
+import { Period, User } from '@prisma/client';
 import CountRequestsPending from '../_actions/count-requests-pending';
+import { db } from '../_lib/prisma';
+import { RoomsClientLayout } from './_components/room-client-layout';
 
 // Mapa de horários para o cálculo da disponibilidade, ajustado para UTC-3
 const periodTimesUTC: {
@@ -124,7 +123,15 @@ async function getFilterData() {
   };
 }
 
-export default async function RoomsPage({
+// Precisamos de buscar os utilizadores para o modal de reserva
+async function getUsers(): Promise<Pick<User, 'id' | 'name'>[]> {
+  return db.user.findMany({
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true },
+  });
+}
+
+export default async function RoomsClientPageWrapper({
   searchParams,
 }: {
   searchParams: { [key: string]: string | undefined };
@@ -141,9 +148,10 @@ export default async function RoomsPage({
     availabilityPeriod: searchParams.availabilityPeriod as Period | undefined,
   };
 
-  const [rooms, { allLocations, allTypes }] = await Promise.all([
+  const [rooms, { allLocations, allTypes }, users] = await Promise.all([
     getRooms(filters),
     getFilterData(),
+    getUsers(),
   ]);
 
   return (
@@ -159,23 +167,13 @@ export default async function RoomsPage({
       <SidebarInset>
         <SiteHeader pendingRequestsCount={CountRequestsPending()} />
         <div className="container mx-auto px-4 py-4 md:px-2 md:py-4">
-          <RoomFilters allLocations={allLocations} allTypes={allTypes} />
-
-          <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-            {rooms.map((room) => (
-              <RoomItem room={room} key={room.id} />
-            ))}
-            {rooms.length === 0 && (
-              <div className="col-span-full flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
-                <h3 className="text-xl font-semibold text-gray-800">
-                  Nenhuma sala encontrada
-                </h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  Tente ajustar os seus filtros ou limpar a seleção.
-                </p>
-              </div>
-            )}
-          </div>
+          {/* Renderiza o novo componente de cliente, passando todos os dados */}
+          <RoomsClientLayout
+            initialRooms={rooms}
+            allLocations={allLocations}
+            allTypes={allTypes}
+            allUsers={users}
+          />
         </div>
       </SidebarInset>
     </SidebarProvider>
