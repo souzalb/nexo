@@ -39,7 +39,7 @@ export async function PATCH(
   }
 
   try {
-    const { status } = await req.json(); // Espera "APROVADO" ou "RECUSADO"
+    const { status, refusalReason } = await req.json();
     if (!['APROVADO', 'RECUSADO'].includes(status)) {
       return NextResponse.json(
         { message: 'Status inválido.' },
@@ -66,6 +66,7 @@ export async function PATCH(
     }
 
     let responseMessage = '';
+    let notificationMessage = '';
 
     if (status === 'APROVADO') {
       // --- LÓGICA DE APROVAÇÃO ---
@@ -130,21 +131,26 @@ export async function PATCH(
         }),
       ]);
       responseMessage = `${bookingsToCreate.length} reservas criadas e solicitação aprovada com sucesso.`;
+      notificationMessage = `A sua solicitação para a turma "${request.classCode}" foi APROVADA.`;
     } else {
       // status === 'RECUSADO'
       await db.bookingRequest.update({
         where: { id: params.id },
-        data: { status: 'RECUSADO' },
+        data: {
+          status: 'RECUSADO',
+          refusalReason: refusalReason || 'Sem justificativa.',
+        },
       });
       responseMessage = 'Solicitação recusada com sucesso.';
+      notificationMessage = `A sua solicitação para a turma "${request.classCode}" foi RECUSADA. Motivo: ${refusalReason || 'Não especificado'}`;
     }
 
     // --- LÓGICA DE NOTIFICAÇÃO CENTRALIZADA ---
     // Notificação na aplicação
     await db.notification.create({
       data: {
-        message: `Sua solicitação para a turma "${request.classCode}" foi ${status === 'APROVADO' ? 'aprovada' : 'recusada'}.`,
-        link: '/my-bookings',
+        message: notificationMessage,
+        link: '/my-requests',
         userId: request.userId,
       },
     });
@@ -155,11 +161,11 @@ export async function PATCH(
         userName: request.user.name || 'Utilizador',
         classCode: request.classCode,
         status: status === 'APROVADO' ? 'aprovada' : 'recusada',
+        refusalReason: status === 'RECUSADO' ? refusalReason : undefined,
       }),
     );
 
     try {
-      console.log(request.user.email);
       await resend.emails.send({
         from: 'onboarding@resend.dev',
         to: [request.user.email],
@@ -177,7 +183,8 @@ export async function PATCH(
     await db.auditLog.create({
       data: {
         action: `REQUEST_${status}`,
-        details: `A solicitação para a turma "${request.classCode}" foi ${status === 'APROVADO' ? 'aprovada' : 'recusada'}.`,
+        details:
+          `A solicitação para a turma "${request.classCode}" foi ${status === 'APROVADO' ? 'aprovada' : 'recusada'}. ${status === 'RECUSADO' ? `Motivo: ${refusalReason}` : ''}`.trim(),
         userId: session.user.id,
       },
     });

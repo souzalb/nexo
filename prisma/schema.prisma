@@ -56,6 +56,7 @@ model BookingRequest {
   endDate   DateTime
   weekdays  Int[]
   status    String   @default("PENDENTE")
+  refusalReason String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -108,7 +109,7 @@ model Booking {
   updatedAt DateTime      @updatedAt
   period    Period        @default(MANHA)
 
-  // --- CAMPOS PARA RESERVAS RECORRENTES ---
+
   classCode      String? // Código da turma (opcional para reservas únicas)
   bookingGroupId String? // ID para agrupar reservas da mesma turma
 

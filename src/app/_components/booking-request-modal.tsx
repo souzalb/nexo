@@ -20,6 +20,7 @@ type BookingRequestWithRelations = {
   weekdays: number[];
   user: { name: string | null };
   room: { name: string | null };
+  refusalReason: string | null;
 };
 
 interface BookingRequestDetailsModalProps {
@@ -125,6 +126,17 @@ export function BookingRequestDetailsModal({
               ))}
             </div>
           </div>
+
+          {request.status == 'RECUSADO' ? (
+            <div className="flex w-full items-center justify-between">
+              <span className="text-muted-foreground">Motivo da recusa:</span>
+              <div className="col-span-2 flex flex-wrap gap-1">
+                {request.refusalReason}
+              </div>
+            </div>
+          ) : (
+            <></>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>

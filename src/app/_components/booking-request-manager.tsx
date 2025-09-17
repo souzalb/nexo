@@ -7,7 +7,16 @@ import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { IconCheck, IconX, IconInfoCircle } from '@tabler/icons-react';
-import { BookingRequestDetailsModal } from './booking-request-modal';
+import { BookingRequestDetailsModal } from './booking-request-modal'; // Verifique se este é o caminho correto
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from './ui/dialog';
+import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
 
 // O tipo precisa de ser completo para ser passado para o modal de detalhes
@@ -22,6 +31,7 @@ type BookingRequestWithRelations = {
   weekdays: number[];
   user: { name: string | null };
   room: { name: string | null };
+  refusalReason: string | null;
 };
 
 interface BookingRequestsManagerProps {
@@ -34,6 +44,12 @@ export function BookingRequestsManager({
   const router = useRouter();
   const [detailsRequest, setDetailsRequest] =
     useState<BookingRequestWithRelations | null>(null);
+
+  // --- ESTADOS PARA O FLUXO DE RECUSA ---
+  const [isRefusalModalOpen, setIsRefusalModalOpen] = useState(false);
+  const [requestToRefuse, setRequestToRefuse] =
+    useState<BookingRequestWithRelations | null>(null);
+  const [refusalReason, setRefusalReason] = useState('');
 
   // Separa as solicitações por status para as abas
   const { pending, approved, refused } = useMemo(() => {
@@ -52,15 +68,17 @@ export function BookingRequestsManager({
     );
   }, [initialRequests]);
 
+  // Função genérica para atualizar o status de uma solicitação (agora com justificação)
   const handleUpdateRequest = async (
     requestId: string,
     status: 'APROVADO' | 'RECUSADO',
+    reason?: string,
   ) => {
     try {
       const response = await fetch(`/api/booking-requests/${requestId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, refusalReason: reason }),
       });
       const data = await response.json();
       if (!response.ok)
@@ -73,7 +91,23 @@ export function BookingRequestsManager({
     }
   };
 
-  // Componente interno para renderizar a lista de solicitações
+  // --- FUNÇÕES PARA O FLUXO DE RECUSA ---
+  const handleOpenRefusalModal = (request: BookingRequestWithRelations) => {
+    setRequestToRefuse(request);
+    setIsRefusalModalOpen(true);
+  };
+
+  const handleConfirmRefusal = () => {
+    if (requestToRefuse && refusalReason.trim()) {
+      handleUpdateRequest(requestToRefuse.id, 'RECUSADO', refusalReason);
+      setIsRefusalModalOpen(false);
+      setRefusalReason('');
+    } else {
+      toast.error('Por favor, forneça uma justificação para a recusa.');
+    }
+  };
+
+  // Componente interno para renderizar a lista de solicitações com o novo design
   const RequestList = ({
     requests,
   }: {
@@ -95,7 +129,6 @@ export function BookingRequestsManager({
                       <span className="font-bold">{req.room.name}</span>
                     </p>
                   </div>
-
                   <p className="text-sm font-semibold">
                     Solicitado por: {req.user.name}
                   </p>
@@ -117,7 +150,6 @@ export function BookingRequestsManager({
                       })}
                     </p>
                   </div>
-
                   <p className="text-muted-foreground text-sm">
                     Pedido em: {new Date(req.createdAt).toLocaleString('pt-BR')}
                   </p>
@@ -149,13 +181,12 @@ export function BookingRequestsManager({
                     </Button>
                     {req.status === 'PENDENTE' && (
                       <>
+                        {/* O botão de recusar agora abre o modal */}
                         <Button
                           size="sm"
                           variant="outline"
                           className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                          onClick={() =>
-                            handleUpdateRequest(req.id, 'RECUSADO')
-                          }
+                          onClick={() => handleOpenRefusalModal(req)}
                         >
                           <IconX className="mr-2 h-4 w-4" /> Recusar
                         </Button>
@@ -226,6 +257,38 @@ export function BookingRequestsManager({
         onClose={() => setDetailsRequest(null)}
         request={detailsRequest}
       />
+
+      {/* --- NOVO MODAL DE RECUSA --- */}
+      <Dialog open={isRefusalModalOpen} onOpenChange={setIsRefusalModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Recusar Solicitação</DialogTitle>
+            <DialogDescription>
+              Por favor, forneça uma justificação para a recusa. O solicitante
+              será notificado.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea
+              placeholder="Ex: Conflito de horário com um evento prioritário..."
+              value={refusalReason}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              onChange={(e: any) => setRefusalReason(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setIsRefusalModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmRefusal}>
+              Confirmar Recusa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

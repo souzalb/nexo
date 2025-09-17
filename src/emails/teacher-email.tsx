@@ -15,12 +15,14 @@ interface UserStatusEmailProps {
   userName: string;
   classCode: string;
   status: 'aprovada' | 'recusada';
+  refusalReason?: string;
 }
 
 export const UserStatusEmail = ({
   userName,
   classCode,
   status,
+  refusalReason,
 }: UserStatusEmailProps) => (
   <Html>
     <Head />
@@ -37,6 +39,12 @@ export const UserStatusEmail = ({
           turma/evento <strong>&ldquo;{classCode}&rdquo;</strong>. A sua
           solicitação foi <strong>{status}</strong>.
         </Text>
+        {status === 'recusada' && refusalReason && (
+          <Section style={reasonSection}>
+            <Text style={reasonTitle}>Motivo da Recusa:</Text>
+            <Text style={reasonText}>&ldquo;{refusalReason}&rdquo;</Text>
+          </Section>
+        )}
         {status === 'aprovada' && (
           <Text style={paragraph}>
             As suas reservas já estão visíveis no calendário principal.
@@ -101,3 +109,11 @@ const button = {
   marginLeft: '20px',
   marginRight: '20px',
 };
+
+const reasonSection = {
+  borderLeft: '4px solid #e53e3e',
+  paddingLeft: '20px',
+  margin: '20px 0',
+};
+const reasonTitle = { fontSize: '14px', fontWeight: 'bold', color: '#484848' };
+const reasonText = { fontSize: '15px', fontStyle: 'italic', color: '#525f7f' };
