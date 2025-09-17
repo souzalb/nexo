@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Room, Resource, User, RoomImage } from '@prisma/client';
+import { Resource, User, RoomImage } from '@prisma/client';
 import RoomItem from './room-item';
 import { RecurringBookingModal } from '@/app/_components/recurring-booking-modal';
 import { RoomFilters } from '@/app/_components/room-filters';

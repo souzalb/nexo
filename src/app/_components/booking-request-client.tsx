@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -32,7 +31,6 @@ interface BookingRequestsClientProps {
 export function BookingRequestsClient({
   initialRequests,
 }: BookingRequestsClientProps) {
-  const router = useRouter();
   const [detailsRequest, setDetailsRequest] =
     useState<BookingRequestWithRelations | null>(null);
 

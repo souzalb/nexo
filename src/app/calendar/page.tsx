@@ -83,20 +83,23 @@ async function getUsers(): Promise<Pick<User, 'id' | 'name'>[]> {
 export default async function CalendarPage({
   searchParams,
 }: {
-  searchParams?: {
+  searchParams?: Promise<{
     roomId?: string;
     period?: string;
     userId?: string;
-  };
+  }>;
 }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect('/login');
 
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+
   const filters = {
-    roomId: searchParams?.roomId,
-    period: searchParams?.period as Period | undefined,
-    userId: searchParams?.userId,
+    roomId: resolvedSearchParams?.roomId,
+    period: resolvedSearchParams?.period as Period | undefined,
+    userId: resolvedSearchParams?.userId,
   };
+
   const pendingRequestsCountPromise = db.bookingRequest.count({
     where: { status: 'PENDENTE' },
   });

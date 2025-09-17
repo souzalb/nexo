@@ -15,17 +15,6 @@ import {
   startOfToday,
   subDays,
 } from 'date-fns';
-import { Period } from '@prisma/client';
-import { stat } from 'fs';
-// --- Tipos para os dados dos gráficos ---
-type BookingsByRoomData = {
-  name: string;
-  total: number;
-};
-type BookingsByPeriodData = {
-  period: Period | null;
-  _count: { period: number };
-};
 
 // --- Função de busca de dados no servidor ---
 async function getCardStats() {

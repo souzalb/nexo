@@ -44,11 +44,6 @@ export function CalendarFilters({ rooms, users }: CalendarFiltersProps) {
     router.push('/calendar');
   };
 
-  const hasActiveFilters =
-    searchParams.has('roomId') ||
-    searchParams.has('period') ||
-    searchParams.has('userId');
-
   return (
     <div className="mb-4 flex flex-col items-stretch gap-4 rounded-lg border p-4 shadow-sm sm:flex-row sm:items-center">
       <span className="hidden text-sm font-semibold text-gray-700 sm:block dark:text-gray-100">

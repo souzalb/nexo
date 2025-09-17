@@ -23,6 +23,7 @@ import {
   IconBuildingSkyscraper,
   IconTools,
 } from '@tabler/icons-react';
+import Image from 'next/image';
 
 // Define o tipo completo de dados que esperamos da API
 type RoomDetails = {
@@ -102,7 +103,7 @@ export function RoomDetailsModal({
                 <CarouselContent>
                   {roomData.images.map((image) => (
                     <CarouselItem key={image.id}>
-                      <img
+                      <Image
                         src={image.url}
                         alt={`Foto da sala ${roomData.name}`}
                         className="h-64 w-full rounded-md object-cover"

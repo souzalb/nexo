@@ -1,6 +1,6 @@
 'use client';
 
-import { Room, Resource, RoomImage } from '@prisma/client';
+import { Resource, RoomImage } from '@prisma/client';
 import { Button } from '@/app/_components/ui/button';
 import { Card, CardContent } from '@/app/_components/ui/card';
 import {

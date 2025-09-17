@@ -12,7 +12,6 @@ import { BookingsByRoomChart } from './_components/chart-bar-bookings';
 import { BookingsByPeriodChart } from './_components/chart-booking-by-period';
 import { TopUsersChart } from './_components/chart-power-users';
 import { BookingsByTypeChart } from './_components/chart-booking-by-room';
-import CountRequestsPending from './_actions/count-requests-pending';
 import { authOptions } from './_lib/auth';
 
 // --- Tipos para os dados dos gráficos ---
@@ -135,7 +134,7 @@ export default async function Page() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader pendingRequestsCount={CountRequestsPending()} />
+        <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">

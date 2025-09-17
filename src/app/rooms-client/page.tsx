@@ -133,18 +133,22 @@ async function getUsers(): Promise<Pick<User, 'id' | 'name'>[]> {
 export default async function RoomsClientPageWrapper({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | undefined };
+  searchParams?: Promise<{ [key: string]: string | undefined }>;
 }) {
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+
   const filters = {
-    name: searchParams.name,
-    location: searchParams.location,
-    type: searchParams.type,
-    capacity: searchParams.capacity
-      ? parseInt(searchParams.capacity, 10)
+    name: resolvedSearchParams.name,
+    location: resolvedSearchParams.location,
+    type: resolvedSearchParams.type,
+    capacity: resolvedSearchParams.capacity
+      ? parseInt(resolvedSearchParams.capacity, 10)
       : undefined,
-    availabilityStartDate: searchParams.availabilityStartDate,
-    availabilityEndDate: searchParams.availabilityEndDate,
-    availabilityPeriod: searchParams.availabilityPeriod as Period | undefined,
+    availabilityStartDate: resolvedSearchParams.availabilityStartDate,
+    availabilityEndDate: resolvedSearchParams.availabilityEndDate,
+    availabilityPeriod: resolvedSearchParams.availabilityPeriod as
+      | Period
+      | undefined,
   };
 
   const [rooms, { allLocations, allTypes }, users] = await Promise.all([

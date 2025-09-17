@@ -24,7 +24,6 @@ import {
   IconCalendarCancel,
   IconFilter,
   IconFilterX,
-  IconX,
 } from '@tabler/icons-react';
 import { BookingWithRoom } from '../my-bookings/page';
 import { RoomDetailsModal } from './rooms-details-modal';

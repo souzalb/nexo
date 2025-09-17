@@ -60,6 +60,7 @@ export function NotificationBell() {
           ),
         );
       } catch (error) {
+        console.log(error);
         toast.error('Falha ao marcar a notificação como lida.');
       }
     }
