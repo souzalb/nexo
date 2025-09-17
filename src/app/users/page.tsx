@@ -1,12 +1,11 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { redirect } from 'next/navigation';
 import { db } from '../_lib/prisma';
 import { columns, UsersTable } from '../_components/users-table';
 import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
 import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
-import CountRequestsPending from '../_actions/count-requests-pending';
+import { authOptions } from '../_lib/auth';
 
 // Função de Servidor para buscar os usuários
 async function getUsers() {
@@ -47,7 +46,7 @@ export default async function UsersPage() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader pendingRequestsCount={CountRequestsPending()} />
+        <SiteHeader />
         <div className="container mx-auto p-6 md:px-0 md:py-6">
           <UsersTable columns={columns} data={usersData} />
         </div>

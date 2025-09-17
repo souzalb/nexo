@@ -12,7 +12,6 @@ import { Button } from '../_components/ui/button';
 import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
 import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
-import CountRequestsPending from '../_actions/count-requests-pending';
 
 // Schema para o formulário de perfil
 const profileSchema = z.object({
@@ -101,7 +100,6 @@ export default function ProfilePage() {
     }
   };
 
-  const pendingRequestsCount = CountRequestsPending();
   return (
     <SidebarProvider
       style={
@@ -113,7 +111,7 @@ export default function ProfilePage() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader pendingRequestsCount={pendingRequestsCount} />
+        <SiteHeader />
 
         <div className="container mx-auto space-y-8 p-4 md:p-8">
           {/* Formulário de Perfil */}

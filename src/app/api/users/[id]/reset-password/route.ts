@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-
 import { hash } from 'bcryptjs';
-import { authOptions } from '../../../auth/[...nextauth]/route';
 import { db } from '@/app/_lib/prisma';
+import { authOptions } from '@/app/_lib/auth';
 
 // Handler para POST, que irá resetar a senha de um usuário
 export async function POST(

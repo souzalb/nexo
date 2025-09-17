@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
-
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { db } from '@/app/_lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { authOptions } from '@/app/_lib/auth';
 
 const resourceSchema = z.object({
   name: z.string().min(2, 'O nome é obrigatório'),

@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { z } from 'zod';
-import { authOptions } from '../auth/[...nextauth]/route';
 
 import { Resend } from 'resend';
 import { AdminNotificationEmail } from '@/emails/admin-email';
 import { render } from '@react-email/components';
 import { db } from '@/app/_lib/prisma';
+import { authOptions } from '@/app/_lib/auth';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 

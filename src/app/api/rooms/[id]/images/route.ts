@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../auth/[...nextauth]/route';
 import { z } from 'zod';
 import { db } from '@/app/_lib/prisma';
+import { authOptions } from '@/app/_lib/auth';
 
 const addImageSchema = z.object({
   url: z.string().url('Por favor, forneça um URL válido.'),

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
 
 import { z } from 'zod';
 import { db } from '@/app/_lib/prisma';
+import { authOptions } from '@/app/_lib/auth';
 
 // Schema para criar/atualizar uma sala, aceitando uma lista de IDs de recursos
 const roomSchema = z.object({

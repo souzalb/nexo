@@ -3,8 +3,9 @@ import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 
 import { Period } from '@prisma/client';
-import { authOptions } from '../auth/[...nextauth]/route';
+
 import { db } from '@/app/_lib/prisma';
+import { authOptions } from '@/app/_lib/auth';
 
 const recurringBookingSchema = z.object({
   roomId: z.string(),

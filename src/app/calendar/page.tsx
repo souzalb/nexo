@@ -1,13 +1,12 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../api/auth/[...nextauth]/route';
 import { redirect } from 'next/navigation';
-
 import { Period, Room, User } from '@prisma/client';
 import { db } from '../_lib/prisma';
 import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
 import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
 import BookingCalendar from '../_components/booking-calendar';
+import { authOptions } from '../_lib/auth';
 
 // Função para mapear o período a um conjunto de cores
 const getPeriodColors = (period: Period | null) => {
@@ -117,7 +116,7 @@ export default async function CalendarPage({
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader pendingRequestsCount={pendingRequestsCount} />
+        <SiteHeader />
         <div className="container mx-auto py-6 md:py-6">
           <BookingCalendar
             initialEvents={initialEvents}

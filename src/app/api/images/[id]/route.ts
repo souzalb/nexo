@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { v2 as cloudinary } from 'cloudinary';
-import { authOptions } from '../../auth/[...nextauth]/route';
 import { db } from '@/app/_lib/prisma';
+import { authOptions } from '@/app/_lib/auth';
 
 // Configura o Cloudinary com as chaves do ambiente
 cloudinary.config({

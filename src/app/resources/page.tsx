@@ -1,12 +1,11 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { redirect } from 'next/navigation';
 import { db } from '../_lib/prisma';
 import { ResourcesManager } from '../_components/resources-manager';
 import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
 import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
-import CountRequestsPending from '../_actions/count-requests-pending';
+import { authOptions } from '../_lib/auth';
 
 // Busca os recursos no servidor
 async function getResources() {
@@ -34,7 +33,7 @@ export default async function ResourcesPage() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader pendingRequestsCount={CountRequestsPending()} />
+        <SiteHeader />
         <div className="container mx-auto py-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">

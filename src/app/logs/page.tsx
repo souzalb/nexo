@@ -1,5 +1,4 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { redirect } from 'next/navigation';
 import { AuditLogManager } from '../_components/audit-log-manager';
 import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
@@ -7,7 +6,7 @@ import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
 import { db } from '../_lib/prisma';
 import { User } from '@prisma/client';
-import CountRequestsPending from '../_actions/count-requests-pending';
+import { authOptions } from '../_lib/auth';
 
 async function getUsers(): Promise<Pick<User, 'id' | 'name'>[]> {
   return db.user.findMany({
@@ -35,7 +34,7 @@ export default async function AuditLogPage() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader pendingRequestsCount={CountRequestsPending()} />
+        <SiteHeader />
         <div className="container mx-auto py-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">

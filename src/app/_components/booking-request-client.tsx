@@ -22,6 +22,7 @@ type BookingRequestWithRelations = {
   weekdays: number[];
   user: { name: string | null };
   room: { name: string | null };
+  refusalReason: string | null;
 };
 
 interface BookingRequestsClientProps {

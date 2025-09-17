@@ -1,10 +1,10 @@
 // src/app/api/bookings/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
 
 import { z } from 'zod';
 import { db } from '@/app/_lib/prisma';
+import { authOptions } from '@/app/_lib/auth';
 
 // Schema para atualização de uma reserva
 const updateBookingSchema = z.object({

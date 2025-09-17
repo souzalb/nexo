@@ -1,14 +1,22 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ModeToggle } from './mode-toggle';
 import { Separator } from './ui/separator';
 import { SidebarTrigger } from './ui/sidebar';
+import { IconBellRinging } from '@tabler/icons-react';
+import { Button } from './ui/button';
+import { useSession } from 'next-auth/react';
 import { NotificationBell } from './notification-bell';
 
-export function SiteHeader() {
-  const pathname = usePathname();
+interface SiteHeaderProps {
+  pendingRequestsCount: number;
+}
 
+export function SiteHeader({ pendingRequestsCount }: SiteHeaderProps) {
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const router = useRouter();
   const headerNames: { [key: string]: string } = {
     '/': 'Dashboard',
     '/calendar': 'Calendário',
@@ -32,7 +40,24 @@ export function SiteHeader() {
         />
         <h1 className="text-base font-medium capitalize">{nameHeader}</h1>
         <div className="ml-auto flex items-center gap-2">
+          {/* {session?.user.role === 'ADMIN' && (
+            <> */}
           <NotificationBell />
+          {/* <Button
+                className="relative"
+                variant="outline"
+                onClick={() => router.push('/requests')}
+              >
+                <IconBellRinging className="h-4 w-4" />
+                {pendingRequestsCount > 0 && (
+                  <span className="absolute -top-2 -left-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
+                    {pendingRequestsCount}
+                  </span>
+                )}
+              </Button> */}
+          {/* </>
+          )} */}
+
           <ModeToggle />
         </div>
       </div>

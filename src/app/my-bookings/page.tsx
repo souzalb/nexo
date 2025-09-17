@@ -1,14 +1,12 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { redirect } from 'next/navigation';
-
 import { Booking, Room } from '@prisma/client';
 import { db } from '../_lib/prisma';
 import { MyBookingsManager } from '../_components/my-bookings-manager';
 import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
 import { SidebarProvider, SidebarInset } from '../_components/ui/sidebar';
-import CountRequestsPending from '../_actions/count-requests-pending';
+import { authOptions } from '../_lib/auth';
 
 // Define um tipo mais completo para os nossos dados
 export type BookingWithRoom = Booking & {
@@ -51,7 +49,7 @@ export default async function MyBookingsPage() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader pendingRequestsCount={CountRequestsPending()} />
+        <SiteHeader />
         <div className="container mx-auto py-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">

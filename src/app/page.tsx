@@ -1,13 +1,10 @@
 import { getServerSession } from 'next-auth';
 import { AppSidebar } from './_components/app-sidebar';
-
 import { SectionCards } from './_components/section-cards';
 import { SiteHeader } from './_components/site-header';
 import { SidebarInset, SidebarProvider } from './_components/ui/sidebar';
-import { authOptions } from './api/auth/[...nextauth]/route';
 import { redirect } from 'next/navigation';
 import { ChartAreaInteractive } from './_components/chart-area-interactive';
-
 import { subDays } from 'date-fns';
 import { db } from './_lib/prisma';
 import { Period } from '@prisma/client';
@@ -16,6 +13,7 @@ import { BookingsByPeriodChart } from './_components/chart-booking-by-period';
 import { TopUsersChart } from './_components/chart-power-users';
 import { BookingsByTypeChart } from './_components/chart-booking-by-room';
 import CountRequestsPending from './_actions/count-requests-pending';
+import { authOptions } from './_lib/auth';
 
 // --- Tipos para os dados dos gráficos ---
 type BookingsByRoomData = {

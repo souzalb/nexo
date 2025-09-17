@@ -5,7 +5,6 @@ import { AppSidebar } from '../_components/app-sidebar';
 import RoomsManager from '../_components/rooms-manager';
 import { SiteHeader } from '../_components/site-header';
 import { SidebarProvider, SidebarInset } from '../_components/ui/sidebar';
-import CountRequestsPending from '../_actions/count-requests-pending';
 
 // Mapa de horários para o cálculo da disponibilidade, ajustado para UTC-3
 const periodTimesUTC: {
@@ -152,7 +151,7 @@ export default async function AdminRoomsPage({
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader pendingRequestsCount={CountRequestsPending()} />
+        <SiteHeader />
         <div className="container mx-auto px-6 py-6 md:px-2 md:py-6">
           <RoomsManager initialRooms={rooms} allResources={allResources}>
             <AdminRoomFilters allLocations={allLocations} allTypes={allTypes} />

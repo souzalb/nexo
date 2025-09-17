@@ -3,7 +3,6 @@ import { SiteHeader } from '../_components/site-header';
 import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
 
 import { Period, User } from '@prisma/client';
-import CountRequestsPending from '../_actions/count-requests-pending';
 import { db } from '../_lib/prisma';
 import { RoomsClientLayout } from './_components/room-client-layout';
 
@@ -165,7 +164,7 @@ export default async function RoomsClientPageWrapper({
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader pendingRequestsCount={CountRequestsPending()} />
+        <SiteHeader />
         <div className="container mx-auto px-4 py-4 md:px-2 md:py-4">
           {/* Renderiza o novo componente de cliente, passando todos os dados */}
           <RoomsClientLayout
