@@ -20,7 +20,7 @@ async function getAllRequests() {
 export default async function BookingRequestsPage() {
   const session = await getServerSession(authOptions);
   if (session?.user.role !== 'ADMIN') {
-    redirect('/dashboard');
+    redirect('/');
   }
 
   const requests = await getAllRequests();

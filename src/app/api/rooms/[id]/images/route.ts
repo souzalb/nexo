@@ -8,7 +8,7 @@ const addImageSchema = z.object({
   url: z.string().url('Por favor, forneça um URL válido.'),
 });
 
-export async function PATCH(
+export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {

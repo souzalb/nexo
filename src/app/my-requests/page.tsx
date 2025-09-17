@@ -4,6 +4,8 @@ import { SiteHeader } from '../_components/site-header';
 import { SidebarProvider, SidebarInset } from '../_components/ui/sidebar';
 import { BookingRequestsClient } from '../_components/booking-request-client';
 
+export const revalidate = 0;
+
 async function getAllRequests() {
   return db.bookingRequest.findMany({
     include: {
