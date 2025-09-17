@@ -6,14 +6,15 @@ import { authOptions } from '@/app/_lib/auth';
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ message: 'Não autorizado' }, { status: 401 });
   }
 
-  const notificationId = params.id;
+  const notificationId = id;
 
   try {
     const updatedNotification = await db.notification.update({

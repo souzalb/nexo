@@ -8,10 +8,11 @@ const addImageSchema = z.object({
   url: z.string().url('Por favor, forneça um URL válido.'),
 });
 
-export async function POST(
+export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (session?.user.role !== 'ADMIN') {
     return NextResponse.json({ message: 'Não autorizado' }, { status: 403 });
@@ -24,7 +25,7 @@ export async function POST(
     const newImage = await db.roomImage.create({
       data: {
         url,
-        roomId: params.id,
+        roomId: id,
       },
     });
 

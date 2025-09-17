@@ -25,8 +25,10 @@ const updateBookingSchema = z.object({
 // Handler para PATCH (Atualizar uma reserva)
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
+
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ message: 'Não autorizado' }, { status: 401 });
@@ -34,7 +36,7 @@ export async function PATCH(
 
   // 1. Encontrar a reserva que será atualizada
   const bookingToUpdate = await db.booking.findUnique({
-    where: { id: params.id },
+    where: { id },
   });
 
   if (!bookingToUpdate) {
@@ -61,8 +63,8 @@ export async function PATCH(
     if (roomId && roomId !== bookingToUpdate.roomId) {
       const existingBooking = await db.booking.findFirst({
         where: {
-          roomId: roomId, // Verifica na NOVA sala
-          id: { not: params.id }, // Exclui a própria reserva que estamos editando
+          roomId: roomId,
+          id: { not: id },
           // Procura por sobreposição de horários
           AND: [
             { startTime: { lt: bookingToUpdate.endTime } },
@@ -80,7 +82,7 @@ export async function PATCH(
     }
 
     const updatedBooking = await db.booking.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         title,
         startTime: startTime ? new Date(startTime) : undefined,
@@ -118,7 +120,6 @@ export async function PATCH(
 
     return NextResponse.json(updatedBooking, { status: 200 });
   } catch (error) {
-    // ... Zod e outros tratamentos de erro ...
     console.log('ERRO NA API:', error);
     return NextResponse.json(
       { message: 'Erro interno do servidor' },
@@ -130,8 +131,10 @@ export async function PATCH(
 // Handler para DELETE (Excluir/Cancelar uma reserva)
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
+
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ message: 'Não autorizado' }, { status: 401 });
@@ -139,7 +142,7 @@ export async function DELETE(
 
   // 1. Encontrar a reserva que será deletada
   const bookingToDelete = await db.booking.findUnique({
-    where: { id: params.id },
+    where: { id },
   });
 
   if (!bookingToDelete) {
@@ -159,7 +162,7 @@ export async function DELETE(
 
   try {
     await db.booking.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     const room = await db.room.findUnique({

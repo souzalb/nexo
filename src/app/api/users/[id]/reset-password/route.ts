@@ -5,10 +5,11 @@ import { db } from '@/app/_lib/prisma';
 import { authOptions } from '@/app/_lib/auth';
 
 // Handler para POST, que irá resetar a senha de um usuário
-export async function POST(
+export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
 
   // Apenas administradores podem resetar senhas
@@ -17,7 +18,7 @@ export async function POST(
   }
 
   // Um admin não pode resetar a própria senha por este método por segurança
-  if (session.user.id === params.id) {
+  if (session.user.id === id) {
     return NextResponse.json(
       { message: 'Você não pode resetar sua própria senha por este painel.' },
       { status: 400 },
@@ -30,7 +31,7 @@ export async function POST(
 
     // Atualiza apenas o campo da senha do usuário
     await db.user.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         password: hashedPassword,
       },

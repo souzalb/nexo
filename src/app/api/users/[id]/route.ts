@@ -16,15 +16,16 @@ const updateUserSchema = z.object({
 // Handler para PATCH (Atualizar um usuário)
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (session?.user.role !== 'ADMIN') {
     return NextResponse.json({ message: 'Não autorizado' }, { status: 403 });
   }
 
   // Impede que um admin mude sua própria permissão para não se trancar fora do sistema
-  if (session.user.id === params.id) {
+  if (session.user.id === id) {
     const bodyCheck = await req.clone().json();
     if (bodyCheck.role !== 'ADMIN') {
       return NextResponse.json(
@@ -39,7 +40,7 @@ export async function PATCH(
     const dataToUpdate = updateUserSchema.parse(body);
 
     const updatedUser = await db.user.update({
-      where: { id: params.id },
+      where: { id },
       data: dataToUpdate,
     });
 
@@ -69,15 +70,16 @@ export async function PATCH(
 // Handler para DELETE (Deletar um usuário)
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
 
   if (session?.user.role !== 'ADMIN') {
     return NextResponse.json({ message: 'Não autorizado' }, { status: 403 });
   }
 
-  if (session.user.id === params.id) {
+  if (session.user.id === id) {
     return NextResponse.json(
       { message: 'Você não pode excluir sua própria conta.' },
       { status: 400 },
@@ -86,7 +88,7 @@ export async function DELETE(
 
   try {
     const bookingsCount = await db.booking.count({
-      where: { userId: params.id },
+      where: { userId: id },
     });
     if (bookingsCount > 0) {
       return NextResponse.json(
@@ -99,12 +101,12 @@ export async function DELETE(
     }
 
     const userToDelete = await db.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { name: true },
     });
 
     await db.user.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     await db.auditLog.create({

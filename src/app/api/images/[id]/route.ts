@@ -32,10 +32,11 @@ const getPublicIdFromUrl = (url: string): string | null => {
   }
 };
 
-export async function DELETE(
+export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (session?.user.role !== 'ADMIN') {
     return NextResponse.json({ message: 'Não autorizado' }, { status: 403 });
@@ -44,7 +45,7 @@ export async function DELETE(
   try {
     // 1. Encontrar o registo da imagem para obter o URL
     const image = await db.roomImage.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { url: true },
     });
 
@@ -70,7 +71,7 @@ export async function DELETE(
 
     // 4. Apagar o registo da nossa base de dados
     await db.roomImage.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return new NextResponse(null, { status: 204 }); // Retorna sucesso sem conteúdo

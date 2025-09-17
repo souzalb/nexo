@@ -13,8 +13,9 @@ const resourceSchema = z.object({
 // PATCH - Atualizar um recurso existente
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (session?.user.role !== 'ADMIN') {
     return NextResponse.json({ message: 'Não autorizado' }, { status: 403 });
@@ -25,7 +26,7 @@ export async function PATCH(
     const { name } = resourceSchema.parse(body);
 
     const updatedResource = await db.resource.update({
-      where: { id: params.id },
+      where: { id },
       data: { name },
     });
 
@@ -60,8 +61,9 @@ export async function PATCH(
 // DELETE - Excluir um recurso
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (session?.user.role !== 'ADMIN') {
     return NextResponse.json({ message: 'Não autorizado' }, { status: 403 });
@@ -70,7 +72,7 @@ export async function DELETE(
   try {
     // Antes de excluir, verifica se o recurso está a ser utilizado por alguma sala
     const resourceInUse = await db.resource.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { _count: { select: { rooms: true } } },
     });
 
@@ -84,12 +86,12 @@ export async function DELETE(
     }
 
     const resourceName = await db.resource.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { name: true },
     });
 
     await db.resource.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     await db.auditLog.create({

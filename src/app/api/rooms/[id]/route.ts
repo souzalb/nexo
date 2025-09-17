@@ -16,8 +16,9 @@ const updateRoomSchema = z.object({
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (session?.user.role !== 'ADMIN') {
     return NextResponse.json({ message: 'Não autorizado' }, { status: 403 });
@@ -29,7 +30,7 @@ export async function PATCH(
       updateRoomSchema.parse(body);
 
     const updatedRoom = await db.room.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         capacity,
@@ -62,8 +63,9 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (session?.user.role !== 'ADMIN') {
     return NextResponse.json({ message: 'Não autorizado' }, { status: 403 });
@@ -72,7 +74,7 @@ export async function DELETE(
   try {
     const existingBookingsCount = await db.booking.count({
       where: {
-        roomId: params.id,
+        roomId: id,
       },
     });
 
@@ -87,7 +89,7 @@ export async function DELETE(
     }
 
     const roomToDelete = await db.room.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { name: true },
     });
 
@@ -96,7 +98,7 @@ export async function DELETE(
     }
 
     await db.room.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     await db.auditLog.create({

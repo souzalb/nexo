@@ -31,8 +31,9 @@ const periodTimesUTC: {
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (session?.user.role !== 'ADMIN') {
     return NextResponse.json({ message: 'Não autorizado' }, { status: 403 });
@@ -49,7 +50,7 @@ export async function PATCH(
 
     // 1. Busca a solicitação e os dados do utilizador numa única operação.
     const request = await db.bookingRequest.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         user: { select: { name: true, email: true } },
       },
@@ -109,7 +110,7 @@ export async function PATCH(
 
       if (bookingsToCreate.length === 0) {
         await db.bookingRequest.update({
-          where: { id: params.id },
+          where: { id: id },
           data: { status: 'RECUSADO' },
         });
         return NextResponse.json(
@@ -126,7 +127,7 @@ export async function PATCH(
       await db.$transaction([
         db.booking.createMany({ data: bookingsToCreate }),
         db.bookingRequest.update({
-          where: { id: params.id },
+          where: { id: id },
           data: { status: 'APROVADO' },
         }),
       ]);
@@ -135,7 +136,7 @@ export async function PATCH(
     } else {
       // status === 'RECUSADO'
       await db.bookingRequest.update({
-        where: { id: params.id },
+        where: { id: id },
         data: {
           status: 'RECUSADO',
           refusalReason: refusalReason || 'Sem justificativa.',

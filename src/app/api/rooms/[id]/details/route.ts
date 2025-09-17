@@ -4,10 +4,11 @@ import { getServerSession } from 'next-auth';
 import { db } from '@/app/_lib/prisma';
 import { authOptions } from '@/app/_lib/auth';
 
-export async function GET(
+export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   // Qualquer utilizador autenticado pode ver os detalhes de uma sala
   if (!session) {
@@ -16,7 +17,7 @@ export async function GET(
 
   try {
     const roomDetails = await db.room.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         resources: { orderBy: { name: 'asc' } }, // Ordena os recursos alfabeticamente
         images: true,
