@@ -156,7 +156,7 @@ export default async function AdminRoomsPage({
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="container mx-auto px-6 py-6 md:px-2 md:py-6">
+        <div className="p-6 pt-4">
           <RoomsManager initialRooms={rooms} allResources={allResources}>
             <AdminRoomFilters allLocations={allLocations} allTypes={allTypes} />
           </RoomsManager>

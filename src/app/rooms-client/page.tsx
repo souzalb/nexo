@@ -169,7 +169,7 @@ export default async function RoomsClientPageWrapper({
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="container mx-auto px-4 py-4 md:px-2 md:py-4">
+        <div className="p-6 pt-4">
           {/* Renderiza o novo componente de cliente, passando todos os dados */}
           <RoomsClientLayout
             initialRooms={rooms}

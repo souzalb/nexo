@@ -47,7 +47,7 @@ export default async function UsersPage() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="container mx-auto p-6 md:px-0 md:py-6">
+        <div className="p-6 pt-4">
           <UsersTable columns={columns} data={usersData} />
         </div>
       </SidebarInset>

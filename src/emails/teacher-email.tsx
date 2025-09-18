@@ -51,10 +51,7 @@ export const UserStatusEmail = ({
           </Text>
         )}
         <Section style={btnContainer}>
-          <Button
-            style={button}
-            href={`${process.env.NEXTAUTH_URL}/my-bookings`}
-          >
+          <Button style={button} href="https://nexo.dev.br/my-requests">
             Ver As Minhas Reservas
           </Button>
         </Section>

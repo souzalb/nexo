@@ -158,15 +158,15 @@ export function BookingRequestsManager({
                   <div className="flex items-center">
                     <p className="text-sm text-gray-400">Status:</p>
                     {req.status == 'PENDENTE' ? (
-                      <Badge className="ml-2 rounded-full bg-amber-200/50 text-yellow-600">
+                      <Badge className="ml-2 rounded-full bg-amber-200/50 text-yellow-600 dark:bg-amber-500/20 dark:text-amber-400">
                         {req.status}
                       </Badge>
                     ) : req.status == 'APROVADO' ? (
-                      <Badge className="ml-2 rounded-full bg-green-200/50 text-green-600">
+                      <Badge className="ml-2 rounded-full bg-green-200/50 text-green-600 dark:bg-green-200/20 dark:text-green-400">
                         {req.status}
                       </Badge>
                     ) : (
-                      <Badge className="ml-2 rounded-full bg-red-200/50 text-red-600">
+                      <Badge className="ml-2 rounded-full bg-red-200/50 text-red-600 dark:bg-red-500/20 dark:text-red-400">
                         {req.status}
                       </Badge>
                     )}
@@ -230,21 +230,21 @@ export function BookingRequestsManager({
           </TabsTrigger>
         </TabsList>
         <TabsContent value="pendente">
-          <Card className="border-none p-0 shadow-none">
+          <Card className="border-none bg-transparent p-0 shadow-none">
             <CardContent className="p-0">
               <RequestList requests={pending} />
             </CardContent>
           </Card>
         </TabsContent>
         <TabsContent value="aprovado">
-          <Card className="border-none p-0 shadow-none">
+          <Card className="border-none bg-transparent p-0 shadow-none">
             <CardContent className="p-0">
               <RequestList requests={approved} />
             </CardContent>
           </Card>
         </TabsContent>
         <TabsContent value="recusado">
-          <Card className="border-none p-0 shadow-none">
+          <Card className="border-none bg-transparent p-0 shadow-none">
             <CardContent className="p-0">
               <RequestList requests={refused} />
             </CardContent>

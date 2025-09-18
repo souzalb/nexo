@@ -50,7 +50,7 @@ export default async function MyBookingsPage() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="container mx-auto py-6">
+        <div className="p-6 pt-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
               Minhas Reservas

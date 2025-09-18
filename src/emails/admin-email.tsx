@@ -36,7 +36,7 @@ export const AdminNotificationEmail = ({
           <strong>{roomName}</strong>.
         </Text>
         <Section style={btnContainer}>
-          <Button style={button} href={`${process.env.NEXTAUTH_URL}/requests`}>
+          <Button style={button} href="https://nexo.dev.br/requests">
             Ver Solicitações Pendentes
           </Button>
         </Section>

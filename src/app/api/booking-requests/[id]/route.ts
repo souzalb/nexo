@@ -48,7 +48,6 @@ export async function PATCH(
       );
     }
 
-    // 1. Busca a solicitação e os dados do utilizador numa única operação.
     const request = await db.bookingRequest.findUnique({
       where: { id: id },
       include: {
@@ -70,13 +69,12 @@ export async function PATCH(
     let notificationMessage = '';
 
     if (status === 'APROVADO') {
-      // --- LÓGICA DE APROVAÇÃO ---
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const bookingsToCreate: any[] = [];
       const bookingGroupId = crypto.randomUUID();
       const title = `Turma: ${request.classCode}`;
-
       const currentDate = new Date(request.startDate);
+
       while (currentDate <= request.endDate) {
         if (request.weekdays.includes(currentDate.getUTCDay())) {
           for (const slot of request.timeSlots) {
@@ -122,7 +120,58 @@ export async function PATCH(
         );
       }
 
-      // ... (verificações de conflito como antes)
+      // --- VALIDAÇÕES DE CONFLITO
+      const userPeriodConflict = await db.booking.findFirst({
+        where: {
+          userId: request.userId,
+          OR: bookingsToCreate.map((b) => ({
+            AND: [
+              { startTime: { lt: b.endTime } },
+              { endTime: { gt: b.startTime } },
+            ],
+          })),
+        },
+        include: { room: { select: { name: true } } },
+      });
+
+      if (userPeriodConflict) {
+        const conflictDate = userPeriodConflict.startTime.toLocaleDateString(
+          'pt-BR',
+          { timeZone: 'UTC' },
+        );
+        return NextResponse.json(
+          {
+            message: `Este utilizador já possui uma reserva ("${userPeriodConflict.title}") na sala "${userPeriodConflict.room.name}" que conflita com este período no dia ${conflictDate}.`,
+          },
+          { status: 409 },
+        );
+      }
+
+      const roomConflict = await db.booking.findFirst({
+        where: {
+          roomId: request.roomId,
+          OR: bookingsToCreate.map((b) => ({
+            AND: [
+              { startTime: { lt: b.endTime } },
+              { endTime: { gt: b.startTime } },
+            ],
+          })),
+        },
+      });
+
+      if (roomConflict) {
+        const conflictDate = roomConflict.startTime.toLocaleDateString(
+          'pt-BR',
+          { timeZone: 'UTC' },
+        );
+        return NextResponse.json(
+          {
+            message: `Conflito de horário encontrado. A sala já está reservada no dia ${conflictDate}.`,
+          },
+          { status: 409 },
+        );
+      }
+      // --- FIM DAS VALIDAÇÕES ---
 
       await db.$transaction([
         db.booking.createMany({ data: bookingsToCreate }),
@@ -134,7 +183,6 @@ export async function PATCH(
       responseMessage = `${bookingsToCreate.length} reservas criadas e solicitação aprovada com sucesso.`;
       notificationMessage = `A sua solicitação para a turma "${request.classCode}" foi APROVADA.`;
     } else {
-      // status === 'RECUSADO'
       await db.bookingRequest.update({
         where: { id: id },
         data: {
@@ -146,8 +194,6 @@ export async function PATCH(
       notificationMessage = `A sua solicitação para a turma "${request.classCode}" foi RECUSADA. Motivo: ${refusalReason || 'Não especificado'}`;
     }
 
-    // --- LÓGICA DE NOTIFICAÇÃO CENTRALIZADA ---
-    // Notificação na aplicação
     await db.notification.create({
       data: {
         message: notificationMessage,
@@ -156,7 +202,6 @@ export async function PATCH(
       },
     });
 
-    // Notificação por email
     const emailHtml = await render(
       UserStatusEmail({
         userName: request.user.name || 'Utilizador',
@@ -165,12 +210,11 @@ export async function PATCH(
         refusalReason: status === 'RECUSADO' ? refusalReason : undefined,
       }),
     );
-
     try {
       await resend.emails.send({
         from: 'onboarding@resend.dev',
-        to: [request.user.email],
-        subject: `Atualização da sua Solicitação: ${request.classCode}`,
+        to: request.user.email || '',
+        subject: `Sua solicitação foi ${status}`,
         html: emailHtml,
       });
     } catch (emailError) {
@@ -180,7 +224,6 @@ export async function PATCH(
       );
     }
 
-    // Log de Auditoria
     await db.auditLog.create({
       data: {
         action: `REQUEST_${status}`,
