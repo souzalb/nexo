@@ -20,6 +20,8 @@ export function SiteHeader() {
     '/logs': 'Logs',
     '/my-bookings': 'Minhas Reservas',
     '/rooms-client': 'Salas',
+    '/requests': 'Solicitações',
+    '/my-requests': 'Minhas Solicitações',
   };
   const nameHeader = headerNames[pathname];
   return (

@@ -268,43 +268,111 @@ export default function BookingCalendar({
           --fc-event-text-color: hsl(210 40% 98%); /* slate-50 */
         }
 
-        /* --- Estilos estruturais (sem cor) --- */
+        /* --- Estilos estruturais --- */
         .fc .fc-toolbar-title {
           font-size: 1.25rem;
           font-weight: 600;
           text-transform: uppercase;
         }
+
+        /* Responsividade do título do calendário */
+        @media (max-width: 769px) {
+          .fc .fc-toolbar-title {
+            font-size: 1rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .fc .fc-toolbar-title {
+            font-size: 0.875rem;
+          }
+        }
+
         .dark .fc .fc-toolbar-title {
           color: hsl(210 40% 98%); /* slate-50 */
         }
+
         .fc .fc-button {
           padding: 0.5rem 1rem;
           font-size: 0.875rem;
           border-radius: 0.5rem;
         }
+
+        /* Responsividade dos botões do calendário */
+        @media (max-width: 768px) {
+          .fc .fc-button {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .fc .fc-button {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+          }
+        }
+
         .fc .fc-daygrid-day-number {
           font-size: 0.875rem;
         }
+
+        @media (max-width: 480px) {
+          .fc .fc-daygrid-day-number {
+            font-size: 0.75rem;
+          }
+        }
+
         .fc .fc-daygrid-day.fc-day-today {
           background-color: var(--fc-today-bg-color);
         }
+
         .fc .fc-event {
           border-radius: 0.375rem;
           padding: 0.25rem 0.5rem;
+        }
+
+        @media (max-width: 480px) {
+          .fc .fc-event {
+            padding: 0.125rem 0.25rem;
+            font-size: 0.75rem;
+          }
+        }
+
+        /* Melhorias na toolbar do calendário para mobile */
+        @media (max-width: 768px) {
+          .fc .fc-toolbar {
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: center;
+          }
+
+          .fc .fc-toolbar-chunk {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+        }
+
+        /* Ocultar view semanal em telas muito pequenas */
+        @media (max-width: 480px) {
+          .fc .fc-timeGridWeek-button {
+            display: none;
+          }
         }
       `}</style>
 
       <div className="mb-4 flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+          <h1 className="text-2xl font-bold text-gray-800 md:text-xl dark:text-gray-100">
             Gerenciamento de Reservas
           </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-200">
+          <p className="mt-1 text-sm text-gray-500 md:text-xs dark:text-gray-200">
             Clique numa reserva para ver detalhes ou use o botão para criar
             reservas.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 md:flex-col lg:flex-row">
           {session?.user.role === 'ADMIN' && (
             <>
               <Button
@@ -313,7 +381,8 @@ export default function BookingCalendar({
                 onClick={() => router.push('/requests')}
               >
                 <IconBellRinging className="mr-2 h-4 w-4" />
-                Ver Solicitações
+                <span className="hidden sm:inline">Ver Solicitações</span>
+                <span className="sm:hidden">Solicitações</span>
                 {pendingRequestsCount > 0 && (
                   <span className="absolute -top-2 -left-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
                     {pendingRequestsCount}
@@ -324,9 +393,14 @@ export default function BookingCalendar({
           )}
           <Button onClick={() => setIsRecurringModalOpen(true)}>
             <IconCalendarPlus className="mr-2 h-4 w-4" />
-            {session?.user.role === 'ADMIN'
-              ? 'Criar Reserva'
-              : 'Solicitar Reserva'}
+            <span className="hidden sm:inline">
+              {session?.user.role === 'ADMIN'
+                ? 'Criar Reserva'
+                : 'Solicitar Reserva'}
+            </span>
+            <span className="sm:hidden">
+              {session?.user.role === 'ADMIN' ? 'Criar' : 'Solicitar'}
+            </span>
           </Button>
         </div>
       </div>
@@ -361,7 +435,7 @@ export default function BookingCalendar({
         isOpen={isRecurringModalOpen}
         onClose={() => setIsRecurringModalOpen(false)}
         rooms={rooms}
-        users={users} // <-- Passando a lista de utilizadores para o modal
+        users={users}
       />
 
       {/* --- Modal de Edição de Reserva --- */}
