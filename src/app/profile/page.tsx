@@ -113,9 +113,18 @@ export default function ProfilePage() {
       <SidebarInset>
         <SiteHeader />
 
-        <div className="container mx-auto space-y-8 p-4 md:p-8">
+        <div className="flex w-full flex-col space-y-6 p-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+              Gerenciamento de Perfil
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-200">
+              Gerencie aqui as informações do seu perfil, como e-mail, nome de
+              usuário e senha.
+            </p>
+          </div>
           {/* Formulário de Perfil */}
-          <div className="rounded-lg bg-white p-6 shadow-md">
+          <div className="w-full rounded-lg border p-6 shadow-md">
             <h2 className="mb-4 text-xl font-semibold">Dados do Perfil</h2>
             <form
               onSubmit={handleSubmitProfile(onProfileSubmit)}
@@ -152,7 +161,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Formulário de Senha */}
-          <div className="rounded-lg bg-white p-6 shadow-md">
+          <div className="w-full rounded-lg border p-6 shadow-md">
             <h2 className="mb-4 text-xl font-semibold">Alterar Senha</h2>
             <form
               onSubmit={handleSubmitPassword(onPasswordSubmit)}

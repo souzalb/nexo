@@ -125,31 +125,87 @@ export default function BookingCalendar({
     setSelectedEvent(null);
   };
 
-  const handleDeleteBooking = async () => {
+  const handleDeleteBooking = () => {
     if (!selectedEvent) return;
-    toast.error(`Tem certeza que deseja cancelar esta reserva?`, {
-      description: `"${selectedEvent.event.title}"`,
-      action: {
-        label: 'Confirmar Cancelamento',
-        onClick: async () => {
-          try {
-            const response = await fetch(
-              `/api/bookings/${selectedEvent.event.id}`,
-              { method: 'DELETE' },
-            );
-            if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.message || 'Falha ao cancelar reserva');
-            }
-            toast.success('Reserva cancelada com sucesso!');
-            handleCloseDetailsModal();
-            router.refresh();
-          } catch (error) {
-            toast.error((error as Error).message);
-          }
+
+    const eventId = selectedEvent.event.id;
+    const groupId = selectedEvent.event.extendedProps.bookingGroupId;
+    const startDate = selectedEvent.event.start;
+
+    const closeDetailsModal = () => setIsDetailsModalOpen(false);
+
+    // Se a reserva não pertencer a um grupo, mostra apenas a confirmação simples
+    if (!groupId) {
+      toast.error('Tem a certeza que deseja cancelar esta reserva?', {
+        action: {
+          label: 'Confirmar',
+          onClick: () => handleSingleDelete(eventId, closeDetailsModal),
         },
+        cancel: { label: 'Manter Reserva', onClick: () => {} },
+      });
+      return;
+    }
+
+    const handleSingleDelete = async (
+      bookingId: string,
+      callback?: () => void,
+    ) => {
+      try {
+        const response = await fetch(`/api/bookings/${bookingId}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Falha ao cancelar a reserva.');
+        }
+        toast.success('Reserva cancelada com sucesso!');
+        router.refresh();
+      } catch (error) {
+        toast.error((error as Error).message);
+      } finally {
+        if (callback) callback();
+      }
+    };
+
+    const handleRecurringDelete = async (
+      groupId: string,
+      startDate: Date | null,
+      callback?: () => void,
+    ) => {
+      if (!startDate) return;
+      try {
+        const startDateIso = startDate.toISOString();
+        const response = await fetch(
+          `/api/bookings/group/${groupId}?startDate=${startDateIso}`,
+          { method: 'DELETE' },
+        );
+        const data = await response.json();
+        if (!response.ok)
+          throw new Error(data.message || 'Falha ao cancelar as reservas.');
+
+        toast.success(data.message);
+        router.refresh();
+      } catch (error) {
+        toast.error((error as Error).message);
+      } finally {
+        if (callback) callback();
+      }
+    };
+
+    // Se pertencer a um grupo, mostra as duas opções
+    toast.error(`Cancelar a reserva "${selectedEvent.event.title}"`, {
+      description:
+        'Esta reserva faz parte de um agendamento recorrente. Como deseja cancelá-la?',
+      duration: 10000,
+      action: {
+        label: 'Apenas Esta',
+        onClick: () => handleSingleDelete(eventId, closeDetailsModal),
       },
-      cancel: { label: 'Manter Reserva', onClick: () => {} },
+      cancel: {
+        label: 'Esta e as Futuras',
+        onClick: () =>
+          handleRecurringDelete(groupId, startDate, closeDetailsModal),
+      },
     });
   };
 

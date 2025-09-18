@@ -63,6 +63,7 @@ async function getBookings(filters: {
       roomName: booking.room.name,
       roomId: booking.roomId,
       userId: booking.userId,
+      bookingGroupId: booking.bookingGroupId,
     },
   }));
 }
