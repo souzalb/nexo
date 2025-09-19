@@ -92,7 +92,7 @@ export async function POST(req: Request) {
     if (adminEmails.length > 0) {
       try {
         await resend.emails.send({
-          from: 'onboarding@resend.dev',
+          from: 'noreply@nexo.dev.br',
           to: adminEmails,
           subject: `Nova Solicitação de Reserva: ${newRequest.classCode}`,
           html: emailHtml,

@@ -212,7 +212,7 @@ export async function PATCH(
     );
     try {
       await resend.emails.send({
-        from: 'onboarding@resend.dev',
+        from: 'noreply@nexo.dev.br',
         to: request.user.email || '',
         subject: `Sua solicitação foi ${status}`,
         html: emailHtml,
