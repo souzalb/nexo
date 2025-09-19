@@ -107,13 +107,13 @@ export function AuditLogManager({ allUsers }: AuditLogManagerProps) {
   return (
     <div className="space-y-6">
       <Card>
-        <CardContent className="flex items-center justify-between gap-4 px-4">
+        <CardContent className="flex flex-col items-center justify-between gap-4 px-4 lg:flex-row">
           <h3 className="hidden w-fit text-sm font-semibold text-gray-700 sm:block dark:text-gray-100">
             Filtros:
           </h3>
           <form
             onSubmit={handleSubmit(handleFilterSubmit)}
-            className="flex w-full items-center gap-4"
+            className="flex w-full flex-col items-center gap-4 lg:flex-row"
           >
             <Controller
               name="userId"
@@ -123,7 +123,7 @@ export function AuditLogManager({ allUsers }: AuditLogManagerProps) {
                   onValueChange={field.onChange}
                   value={field.value || 'all'}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Filtrar por Utilizador" />
                   </SelectTrigger>
                   <SelectContent>
@@ -149,7 +149,7 @@ export function AuditLogManager({ allUsers }: AuditLogManagerProps) {
               Data de término:
             </h3>
             <Input type="date" {...register('endDate')} />
-            <div className="flex gap-2">
+            <div className="flex w-full items-center gap-2">
               <Button type="submit" className="flex-1">
                 <IconFilter className="mr-2 h-4 w-4" />
                 Aplicar
@@ -157,7 +157,7 @@ export function AuditLogManager({ allUsers }: AuditLogManagerProps) {
               <Button
                 variant="secondary"
                 onClick={clearFilters}
-                className="mt-2 text-red-500 hover:bg-red-50 hover:text-red-600 sm:mt-0"
+                className="text-red-500 hover:bg-red-50 hover:text-red-600 sm:mt-0"
               >
                 <IconFilterX />
               </Button>

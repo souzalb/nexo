@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth';
 import { db } from '@/app/_lib/prisma';
 import { authOptions } from '@/app/_lib/auth';
 
-export async function PATCH(
+export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {

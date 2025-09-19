@@ -203,7 +203,7 @@ export function ReportsManager({ allUsers, allRooms }: ReportsManagerProps) {
   return (
     <div className="space-y-6">
       <Card>
-        <CardContent className="flex items-center justify-between gap-2 p-0 px-4">
+        <CardContent className="flex flex-col items-center justify-between gap-2 p-0 px-4 lg:flex-row">
           <div>
             <h3 className="hidden w-fit text-sm font-semibold text-gray-700 sm:block dark:text-gray-100">
               Filtros:
@@ -211,7 +211,7 @@ export function ReportsManager({ allUsers, allRooms }: ReportsManagerProps) {
           </div>
           <form
             onSubmit={handleSubmit(handleGenerateReport)}
-            className="flex w-full justify-between gap-4"
+            className="flex w-full flex-col justify-between gap-4 lg:flex-row"
           >
             <Input
               placeholder="Data de Início"
@@ -228,7 +228,7 @@ export function ReportsManager({ allUsers, allRooms }: ReportsManagerProps) {
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Filtrar por Utilizador" />
                   </SelectTrigger>
                   <SelectContent>
@@ -247,7 +247,7 @@ export function ReportsManager({ allUsers, allRooms }: ReportsManagerProps) {
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Filtrar por Sala" />
                   </SelectTrigger>
                   <SelectContent>
@@ -265,7 +265,7 @@ export function ReportsManager({ allUsers, allRooms }: ReportsManagerProps) {
               placeholder="Filtrar por Cód. Turma"
               {...register('classCode')}
             />
-            <div className="flex gap-2 xl:col-start-4">
+            <div className="flex items-center gap-2 xl:col-start-4">
               <Button type="submit" disabled={isLoading} className="flex-1">
                 <IconFilter className="mr-2 h-4 w-4" />
                 {isLoading ? 'A gerar...' : 'Gerar'}
@@ -273,7 +273,7 @@ export function ReportsManager({ allUsers, allRooms }: ReportsManagerProps) {
               <Button
                 variant="secondary"
                 onClick={clearFilters}
-                className="mt-2 text-red-500 hover:bg-red-50 hover:text-red-600 sm:mt-0"
+                className="text-red-500 hover:bg-red-50 hover:text-red-600 sm:mt-0"
               >
                 <IconFilterX />
               </Button>

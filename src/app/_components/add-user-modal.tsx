@@ -71,7 +71,7 @@ export function AddUserModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-secondary w-full max-w-lg rounded-lg p-8">
+      <div className="bg-secondary w-[90%] max-w-lg rounded-lg p-8 md:w-full">
         <h2 className="mb-4 text-xl font-bold">Adicionar Novo Usuário</h2>
         <form onSubmit={handleSubmit(handleAddSubmit)} className="space-y-4">
           <div>

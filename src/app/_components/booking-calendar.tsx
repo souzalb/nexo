@@ -515,7 +515,7 @@ export default function BookingCalendar({
       {/* --- Modal de Detalhes da Reserva --- */}
       {isDetailsModalOpen && selectedEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-secondary w-full max-w-lg rounded-lg p-8">
+          <div className="bg-secondary w-[90%] max-w-lg rounded-lg p-8 md:w-full">
             <h2 className="mb-4 text-xl font-bold">Detalhes da Reserva</h2>
             <div className="space-y-2 text-sm">
               <p>
@@ -540,7 +540,7 @@ export default function BookingCalendar({
                 {selectedEvent.event.extendedProps.userName}
               </p>
             </div>
-            <div className="mt-6 flex justify-end gap-4">
+            <div className="mt-6 flex justify-between gap-4 md:justify-end">
               <Button
                 type="button"
                 variant="outline"

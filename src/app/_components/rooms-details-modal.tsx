@@ -106,7 +106,9 @@ export function RoomDetailsModal({
                       <Image
                         src={image.url}
                         alt={`Foto da sala ${roomData.name}`}
-                        className="h-64 w-full rounded-md object-cover"
+                        className="rounded-md object-cover"
+                        height={200}
+                        width={400}
                       />
                     </CarouselItem>
                   ))}
