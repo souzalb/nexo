@@ -36,10 +36,10 @@ export default async function ResourcesPage() {
         <SiteHeader />
         <div className="p-6 pt-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+            <h1 className="text-2xl font-bold text-gray-800 md:text-xl dark:text-gray-100">
               Gerenciamento de Recursos
             </h1>
-            <p className="mb-6 text-sm text-gray-600 dark:text-gray-200">
+            <p className="mb-6 text-sm text-gray-600 md:text-xs dark:text-gray-200">
               Adicione, edite ou remova os recursos disponíveis nas salas (ex:
               Projetor, Ar Condicionado).
             </p>

@@ -49,7 +49,7 @@ export function AdminRoomFilters({
   return (
     <Card className="p-0">
       <CardContent className="p-4">
-        <div className="flex items-center gap-4">
+        <div className="grid grid-cols-1 items-center gap-4 lg:flex">
           <span className="hidden text-sm font-semibold text-gray-700 sm:block dark:text-gray-100">
             Filtros:
           </span>
@@ -99,7 +99,7 @@ export function AdminRoomFilters({
           />
         </div>
 
-        <div className="mt-4 flex items-center gap-4 border-t pt-4">
+        <div className="mt-4 grid grid-cols-1 items-center gap-4 border-t pt-4 lg:flex">
           <span className="hidden text-sm font-semibold text-nowrap text-gray-700 sm:block dark:text-gray-100">
             Filtros por disponibilidade:
           </span>

@@ -146,13 +146,13 @@ export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
     <div className="space-y-8">
       {/* Secção de Filtros */}
       <Card>
-        <CardContent className="flex items-center gap-4 p-0 px-4">
+        <CardContent className="grid grid-cols-1 items-center gap-4 p-0 px-4 lg:flex">
           <h3 className="hidden w-fit text-sm font-semibold text-gray-700 sm:block dark:text-gray-100">
             Filtros:
           </h3>
           <form
             onSubmit={handleSubmit(onFilterSubmit)}
-            className="flex w-full items-center gap-4"
+            className="grid w-full grid-cols-1 items-center gap-4 lg:flex"
           >
             <Controller
               name="roomId"
@@ -162,7 +162,7 @@ export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
                   onValueChange={field.onChange}
                   value={field.value || 'all'}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Filtrar por Sala" />
                   </SelectTrigger>
                   <SelectContent>
@@ -188,7 +188,7 @@ export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
               Data de término:
             </h3>
             <Input type="date" {...register('endDate')} />
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <Button type="submit" className="flex-1">
                 <IconFilter className="mr-2 h-4 w-4" />
                 Aplicar
@@ -196,7 +196,7 @@ export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
               <Button
                 variant="secondary"
                 onClick={clearFilters}
-                className="mt-2 text-red-500 hover:bg-red-50 hover:text-red-600 sm:mt-0"
+                className="text-red-500 hover:bg-red-50 hover:text-red-600"
               >
                 <IconFilterX />
               </Button>

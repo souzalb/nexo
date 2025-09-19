@@ -239,26 +239,26 @@ export function UsersTable<TData, TValue>({
   return (
     <div className="w-full">
       <div>
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+        <h1 className="text-2xl font-bold text-gray-800 md:text-xl dark:text-gray-100">
           Gerenciamento de Usuários
         </h1>
-        <p className="mb-2 text-sm text-gray-600 dark:text-gray-200">
+        <p className="text-sm text-gray-600 md:text-xs dark:text-gray-200">
           Adicione, edite ou remova os usuários do sistema.
         </p>
       </div>
-      <div className="flex items-center justify-between py-4">
+      <div className="flex flex-col justify-between py-4 lg:flex-row lg:items-center">
         <Input
           placeholder="Filtrar por nome..."
           value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
           onChange={(event) =>
             table.getColumn('name')?.setFilterValue(event.target.value)
           }
-          className="max-w-sm"
+          className="w-full lg:max-w-sm"
         />
-        <div className="flex items-center gap-2">
+        <div className="mt-4 flex justify-between gap-2 lg:mt-0 lg:items-center">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
+              <Button variant="outline" className="lg:ml-auto">
                 Colunas <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -286,7 +286,7 @@ export function UsersTable<TData, TValue>({
           </Button>
         </div>
       </div>
-      <div className="overflow-hidden rounded-lg border p-4 shadow-sm">
+      <div className="grid grid-cols-1 gap-4 overflow-hidden rounded-lg border p-4 px-4 shadow-sm lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

@@ -52,10 +52,10 @@ export default async function MyBookingsPage() {
         <SiteHeader />
         <div className="p-6 pt-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+            <h1 className="text-2xl font-bold text-gray-800 md:text-xl dark:text-gray-100">
               Minhas Reservas
             </h1>
-            <p className="mb-6 text-sm text-gray-600 dark:text-gray-200">
+            <p className="mb-6 text-sm text-gray-600 md:text-xs dark:text-gray-200">
               Visualize aqui todos os seus agendamentos, futuros e passados.
             </p>
           </div>

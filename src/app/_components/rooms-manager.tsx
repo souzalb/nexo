@@ -75,22 +75,31 @@ export default function RoomsManager({
 
   return (
     <div className="space-y-6">
-      <div className="flex w-full items-center justify-between">
-        <div>
+      {/* --- CABEÇALHO REFATORADO PARA RESPONSIVIDADE --- */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        {/* Bloco de Título e Descrição */}
+        <div className="flex-grow">
           <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
             Gerenciamento de Salas
           </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-200">
-            Faça o gerenciamento das salas de forma eficiente ou clique no botão
-            &ldquo;Adicionar Sala&rdquo; para criar um novo ambiente!.
+            Faça o gerenciamento das salas de forma eficiente ou crie um novo
+            ambiente.
           </p>
         </div>
-        <Button onClick={() => handleOpenModal(null)}>
-          <IconPlus />
-          Adicionar Sala
-        </Button>
+        {/* Bloco do Botão */}
+        <div className="flex-shrink-0">
+          <Button
+            onClick={() => handleOpenModal(null)}
+            className="w-full md:w-auto" // Ocupa toda a largura no móvel, largura automática no desktop
+          >
+            <IconPlus className="mr-2 h-4 w-4" />
+            Adicionar Sala
+          </Button>
+        </div>
       </div>
 
+      {/* Renderiza o componente de filtros passado como filho */}
       {children}
 
       <RoomsTable

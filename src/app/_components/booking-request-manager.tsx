@@ -45,13 +45,11 @@ export function BookingRequestsManager({
   const [detailsRequest, setDetailsRequest] =
     useState<BookingRequestWithRelations | null>(null);
 
-  // --- ESTADOS PARA O FLUXO DE RECUSA ---
   const [isRefusalModalOpen, setIsRefusalModalOpen] = useState(false);
   const [requestToRefuse, setRequestToRefuse] =
     useState<BookingRequestWithRelations | null>(null);
   const [refusalReason, setRefusalReason] = useState('');
 
-  // Separa as solicitações por status para as abas
   const { pending, approved, refused } = useMemo(() => {
     return initialRequests.reduce(
       (acc, request) => {
@@ -68,7 +66,6 @@ export function BookingRequestsManager({
     );
   }, [initialRequests]);
 
-  // Função genérica para atualizar o status de uma solicitação (agora com justificação)
   const handleUpdateRequest = async (
     requestId: string,
     status: 'APROVADO' | 'RECUSADO',
@@ -91,7 +88,6 @@ export function BookingRequestsManager({
     }
   };
 
-  // --- FUNÇÕES PARA O FLUXO DE RECUSA ---
   const handleOpenRefusalModal = (request: BookingRequestWithRelations) => {
     setRequestToRefuse(request);
     setIsRefusalModalOpen(true);
@@ -107,22 +103,20 @@ export function BookingRequestsManager({
     }
   };
 
-  // Componente interno para renderizar a lista de solicitações com o novo design
+  // --- COMPONENTE INTERNO REFATORADO PARA RESPONSIVIDADE ---
   const RequestList = ({
     requests,
   }: {
     requests: BookingRequestWithRelations[];
   }) => (
-    <ul>
+    <ul className="space-y-4">
       {requests.length > 0 ? (
         requests.map((req) => (
-          <li
-            key={req.id}
-            className="flex flex-col items-start gap-2 py-2 sm:flex-row sm:items-center sm:justify-between"
-          >
+          <li key={req.id}>
             <Card className="w-full p-0">
-              <CardContent className="flex items-end justify-between p-4">
-                <div className="space-y-2">
+              <CardContent className="flex flex-col items-start justify-between gap-4 p-4 lg:flex-row lg:items-center">
+                {/* Bloco de Informações (Esquerda) */}
+                <div className="flex-grow space-y-2">
                   <div className="flex items-center">
                     <p className="font-bold">
                       {req.classCode} -{' '}
@@ -132,36 +126,32 @@ export function BookingRequestsManager({
                   <p className="text-sm font-semibold">
                     Solicitado por: {req.user.name}
                   </p>
-                  <div className="flex items-center gap-1">
-                    <p className="text-sm font-semibold">Data de início:</p>
-                    <p className="text-sm">
-                      {new Date(req.startDate).toLocaleString('pt-BR', {
-                        dateStyle: 'short',
+                  <div className="flex items-center gap-1 text-sm">
+                    <p className="font-semibold">Período:</p>
+                    <p>
+                      {new Date(req.startDate).toLocaleDateString('pt-BR', {
+                        timeZone: 'UTC',
+                      })}{' '}
+                      -{' '}
+                      {new Date(req.endDate).toLocaleDateString('pt-BR', {
                         timeZone: 'UTC',
                       })}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <p className="text-sm font-semibold">Data de término:</p>
-                    <p className="text-sm">
-                      {new Date(req.endDate).toLocaleString('pt-BR', {
-                        dateStyle: 'short',
-                        timeZone: 'UTC',
-                      })}
-                    </p>
-                  </div>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-muted-foreground text-xs">
                     Pedido em: {new Date(req.createdAt).toLocaleString('pt-BR')}
                   </p>
                 </div>
-                <div className="flex h-full flex-col items-end space-y-20">
-                  <div className="flex items-center">
+
+                {/* Bloco de Ações (Direita) */}
+                <div className="flex w-full flex-col gap-4 md:items-end lg:w-auto lg:space-y-8">
+                  <div className="flex items-center self-end">
                     <p className="text-sm text-gray-400">Status:</p>
-                    {req.status == 'PENDENTE' ? (
+                    {req.status === 'PENDENTE' ? (
                       <Badge className="ml-2 rounded-full bg-amber-200/50 text-yellow-600 dark:bg-amber-500/20 dark:text-amber-400">
                         {req.status}
                       </Badge>
-                    ) : req.status == 'APROVADO' ? (
+                    ) : req.status === 'APROVADO' ? (
                       <Badge className="ml-2 rounded-full bg-green-200/50 text-green-600 dark:bg-green-200/20 dark:text-green-400">
                         {req.status}
                       </Badge>
@@ -171,28 +161,29 @@ export function BookingRequestsManager({
                       </Badge>
                     )}
                   </div>
+
                   <div className="flex gap-2">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => setDetailsRequest(req)}
+                      className="flex-1 lg:flex-auto"
                     >
                       <IconInfoCircle className="mr-2 h-4 w-4" /> Detalhes
                     </Button>
                     {req.status === 'PENDENTE' && (
                       <>
-                        {/* O botão de recusar agora abre o modal */}
                         <Button
                           size="sm"
                           variant="outline"
-                          className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                          className="flex-1 text-red-600 hover:bg-red-50 hover:text-red-700 lg:flex-auto"
                           onClick={() => handleOpenRefusalModal(req)}
                         >
                           <IconX className="mr-2 h-4 w-4" /> Recusar
                         </Button>
                         <Button
                           size="sm"
-                          className="bg-green-600 hover:bg-green-700"
+                          className="flex-1 bg-green-600 hover:bg-green-700 lg:flex-auto"
                           onClick={() =>
                             handleUpdateRequest(req.id, 'APROVADO')
                           }
@@ -258,7 +249,6 @@ export function BookingRequestsManager({
         request={detailsRequest}
       />
 
-      {/* --- NOVO MODAL DE RECUSA --- */}
       <Dialog open={isRefusalModalOpen} onOpenChange={setIsRefusalModalOpen}>
         <DialogContent>
           <DialogHeader>
@@ -272,8 +262,7 @@ export function BookingRequestsManager({
             <Textarea
               placeholder="Ex: Conflito de horário com um evento prioritário..."
               value={refusalReason}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              onChange={(e: any) => setRefusalReason(e.target.value)}
+              onChange={(e) => setRefusalReason(e.target.value)}
             />
           </div>
           <DialogFooter>
