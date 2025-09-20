@@ -3,11 +3,19 @@ import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
 import { SidebarProvider, SidebarInset } from '../_components/ui/sidebar';
 import { BookingRequestsClient } from '../_components/booking-request-client';
+import { useSession } from 'next-auth/react';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../_lib/auth';
 
 export const revalidate = 0;
 
+const session = await getServerSession(authOptions);
+
 async function getAllRequests() {
   return db.bookingRequest.findMany({
+    where: {
+      userId: session?.user.id,
+    },
     include: {
       user: { select: { name: true } },
       room: { select: { name: true } },
