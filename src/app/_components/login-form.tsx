@@ -12,6 +12,7 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signIn } from 'next-auth/react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const loginSchema = z.object({
   email: z.email('Email inválido'),
@@ -165,8 +166,13 @@ export function LoginForm({
       </Card>
       <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
         Ao clicar em entrar, você concorda com nossos{' '}
-        <a href="#">Termos de Serviço</a> e{' '}
-        <a href="#">Políticas de Privacidade</a>.
+        <Link href="/public/terms" className="hover:text-primary underline">
+          Termos de Serviço
+        </Link>
+        <span> e </span>
+        <Link href="/public/privacy" className="hover:text-primary underline">
+          Política de Privacidade
+        </Link>
       </div>
     </div>
   );
