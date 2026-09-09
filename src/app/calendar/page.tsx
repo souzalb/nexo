@@ -63,6 +63,7 @@ async function getBookings(filters: {
       roomName: booking.room.name,
       roomId: booking.roomId,
       userId: booking.userId,
+      requesterId: booking.requesterId,
       bookingGroupId: booking.bookingGroupId,
     },
   }));
@@ -73,8 +74,10 @@ async function getRooms(): Promise<Room[]> {
   return rooms;
 }
 
-async function getUsers(): Promise<Pick<User, 'id' | 'name'>[]> {
+async function getUsers(role: string): Promise<Pick<User, 'id' | 'name'>[]> {
+  const whereClause = role === 'MANAGER' ? { role: 'TEACHER' as const } : {};
   return db.user.findMany({
+    where: whereClause,
     orderBy: { name: 'asc' },
     select: { id: true, name: true },
   });
@@ -106,7 +109,12 @@ export default async function CalendarPage({
   });
 
   const [initialEvents, rooms, users, pendingRequestsCount] = await Promise.all(
-    [getBookings(filters), getRooms(), getUsers(), pendingRequestsCountPromise],
+    [
+      getBookings(filters),
+      getRooms(),
+      getUsers(session.user.role),
+      pendingRequestsCountPromise,
+    ],
   );
 
   return (

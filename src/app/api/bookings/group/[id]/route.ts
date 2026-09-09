@@ -27,7 +27,7 @@ export async function DELETE(
     // Busca uma das reservas para garantir que o utilizador tem permissão para a apagar
     const sampleBooking = await db.booking.findFirst({
       where: { bookingGroupId },
-      select: { userId: true },
+      select: { userId: true, requesterId: true },
     });
 
     if (!sampleBooking) {
@@ -39,7 +39,8 @@ export async function DELETE(
 
     if (
       session.user.role !== 'ADMIN' &&
-      session.user.id !== sampleBooking.userId
+      session.user.id !== sampleBooking.userId &&
+      session.user.id !== sampleBooking.requesterId
     ) {
       return NextResponse.json({ message: 'Acesso negado.' }, { status: 403 });
     }

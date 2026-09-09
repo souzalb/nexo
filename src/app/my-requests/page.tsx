@@ -9,12 +9,11 @@ import { authOptions } from '../_lib/auth';
 
 export const revalidate = 0;
 
-const session = await getServerSession(authOptions);
-
-async function getAllRequests() {
+async function getAllRequests(userId: string | undefined) {
+  if (!userId) return [];
   return db.bookingRequest.findMany({
     where: {
-      userId: session?.user.id,
+      userId: userId,
     },
     include: {
       user: { select: { name: true } },
@@ -25,7 +24,8 @@ async function getAllRequests() {
 }
 
 export default async function BookingRequestsPage() {
-  const requests = await getAllRequests();
+  const session = await getServerSession(authOptions);
+  const requests = await getAllRequests(session?.user.id);
 
   return (
     <SidebarProvider

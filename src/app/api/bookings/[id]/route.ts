@@ -49,7 +49,8 @@ export async function PATCH(
   // 2. VERIFICAÇÃO DE AUTORIZAÇÃO
   if (
     session.user.role !== 'ADMIN' &&
-    bookingToUpdate.userId !== session.user.id
+    bookingToUpdate.userId !== session.user.id &&
+    bookingToUpdate.requesterId !== session.user.id
   ) {
     return NextResponse.json({ message: 'Acesso negado' }, { status: 403 });
   }
@@ -155,7 +156,8 @@ export async function DELETE(
   // 2. VERIFICAÇÃO DE AUTORIZAÇÃO
   if (
     session.user.role !== 'ADMIN' &&
-    bookingToDelete.userId !== session.user.id
+    bookingToDelete.userId !== session.user.id &&
+    bookingToDelete.requesterId !== session.user.id
   ) {
     return NextResponse.json({ message: 'Acesso negado' }, { status: 403 });
   }

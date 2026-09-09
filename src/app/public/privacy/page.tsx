@@ -1,4 +1,4 @@
-import { LegalLayout } from '../_components/layout';
+import { LegalLayout } from '../_components/legal-layout';
 
 export default function PrivacyPage() {
   return (

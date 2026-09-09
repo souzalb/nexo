@@ -549,8 +549,9 @@ export default function BookingCalendar({
                 Fechar
               </Button>
               {(session?.user.role === 'ADMIN' ||
+                session?.user.id === selectedEvent.event.extendedProps.userId ||
                 session?.user.id ===
-                  selectedEvent.event.extendedProps.userId) && (
+                  selectedEvent.event.extendedProps.requesterId) && (
                 <>
                   <Button onClick={handleStartEditing}>Editar</Button>
                   <Button variant="destructive" onClick={handleDeleteBooking}>

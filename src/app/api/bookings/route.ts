@@ -101,6 +101,7 @@ export async function POST(req: Request) {
             startTime,
             endTime,
             userId: targetUserId,
+            requesterId: session.user.id,
             roomId,
             classCode,
             bookingGroupId,

@@ -18,9 +18,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  bookings      Booking[]
+  bookings      Booking[]        @relation("BookingUser")
+  requestedBookings Booking[]    @relation("BookingRequester")
   auditLogs     AuditLog[]
-  requests      BookingRequest[]
+  requests      BookingRequest[] @relation("BookingRequestUser")
+  requestedRequests BookingRequest[] @relation("BookingRequestRequester")
   notifications Notification[]
 }
 
@@ -70,8 +72,11 @@ model BookingRequest {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation("BookingRequestUser", fields: [userId], references: [id], onDelete: Cascade)
   userId String
+
+  requester   User?   @relation("BookingRequestRequester", fields: [requesterId], references: [id], onDelete: SetNull)
+  requesterId String?
 
   room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
 }
@@ -125,7 +130,10 @@ model Booking {
 
   // Chaves estrangeiras e Relações
   userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation("BookingUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  requesterId String?
+  requester   User?   @relation("BookingRequester", fields: [requesterId], references: [id], onDelete: SetNull)
 
   roomId String
   room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)

@@ -266,13 +266,15 @@ export function RecurringBookingModal({
             : 'Solicitar Reserva'}
         </h2>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-          {session?.user.role === 'ADMIN' && (
+          {['ADMIN', 'MANAGER'].includes(session?.user.role ?? '') && (
             <div>
               <label
                 htmlFor="userId"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-100"
               >
-                Reservar para o Usuário
+                {session?.user.role === 'ADMIN'
+                  ? 'Reservar para o Usuário'
+                  : 'Solicitar para o Usuário'}
               </label>
               <Controller
                 name="userId"

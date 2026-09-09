@@ -45,9 +45,11 @@ export async function POST(req: Request) {
     const data = requestSchema.parse(body);
 
     const targetUserId =
-      session.user.role === 'ADMIN' && data.userId
+      ['ADMIN', 'MANAGER'].includes(session.user.role) && data.userId
         ? data.userId
         : session.user.id;
+
+    const isOnBehalf = targetUserId !== session.user.id;
 
     // Cria o pedido e, na mesma operação, busca os dados relacionados necessários.
     const newRequest = await db.bookingRequest.create({
@@ -59,6 +61,7 @@ export async function POST(req: Request) {
         endDate: new Date(data.endDate),
         weekdays: data.weekdays,
         userId: targetUserId,
+        requesterId: session.user.id,
       },
       include: {
         user: { select: { name: true } },
@@ -66,13 +69,23 @@ export async function POST(req: Request) {
       },
     });
 
+    // Buscar nome do solicitante quando for em nome de outro
+    let requesterDisplayName = newRequest.user.name;
+    if (isOnBehalf) {
+      const requester = await db.user.findUnique({
+        where: { id: session.user.id },
+        select: { name: true },
+      });
+      requesterDisplayName = `${newRequest.user.name} (solicitado por ${requester?.name || 'Manager'})`;
+    }
+
     // Envio de notificação na aplicação
     const admins = await db.user.findMany({
       where: { role: 'ADMIN' },
     });
     await db.notification.createMany({
       data: admins.map((admin) => ({
-        message: `Nova solicitação de ${newRequest.user.name} para a turma "${newRequest.classCode}".`,
+        message: `Nova solicitação de ${requesterDisplayName} para a turma "${newRequest.classCode}".`,
         link: '/requests',
         userId: admin.id,
       })),
