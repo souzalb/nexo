@@ -20,6 +20,7 @@ type BookingRequestWithRelations = {
   weekdays: number[];
   user: { name: string | null };
   room: { name: string | null };
+  requester?: { name: string | null } | null;
   refusalReason: string | null;
 };
 
@@ -88,7 +89,15 @@ export function BookingRequestDetailsModal({
           </div>
           <div className="flex w-full items-center justify-between">
             <span className="text-muted-foreground">Solicitante:</span>
-            <span className="col-span-2 font-medium">{request.user.name}</span>
+            <span className="col-span-2 font-medium">
+              {request.user.name}
+              {request.requester &&
+                request.requester.name !== request.user.name && (
+                  <span className="text-muted-foreground ml-1 font-normal">
+                    (via {request.requester.name})
+                  </span>
+                )}
+            </span>
           </div>
           <div className="flex w-full items-center justify-between">
             <span className="text-muted-foreground">Sala:</span>

@@ -11,6 +11,7 @@ async function getAllRequests() {
   return db.bookingRequest.findMany({
     include: {
       user: { select: { name: true } },
+      requester: { select: { name: true } },
       room: { select: { name: true } },
     },
     orderBy: { updatedAt: 'desc' },

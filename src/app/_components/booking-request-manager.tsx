@@ -31,6 +31,7 @@ type BookingRequestWithRelations = {
   weekdays: number[];
   user: { name: string | null };
   room: { name: string | null };
+  requester: { name: string | null } | null;
   refusalReason: string | null;
 };
 
@@ -84,7 +85,17 @@ export function BookingRequestsManager({
       toast.success(data.message);
       router.refresh();
     } catch (error) {
-      toast.error((error as Error).message);
+      const errorMessage = (error as Error).message;
+      toast.error(errorMessage, {
+        duration: 8000,
+        action: {
+          label: 'Copiar',
+          onClick: () => {
+            navigator.clipboard.writeText(errorMessage);
+            toast.success('Motivo copiado para a área de transferência!');
+          },
+        },
+      });
     }
   };
 
@@ -125,6 +136,11 @@ export function BookingRequestsManager({
                   </div>
                   <p className="text-sm font-semibold">
                     Solicitado por: {req.user.name}
+                    {req.requester && req.requester.name !== req.user.name && (
+                      <span className="text-muted-foreground ml-1 font-normal">
+                        (via {req.requester.name})
+                      </span>
+                    )}
                   </p>
                   <div className="flex items-center gap-1 text-sm">
                     <p className="font-semibold">Período:</p>
