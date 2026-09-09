@@ -1,5 +1,6 @@
 'use client';
 
+import { AnimatedBackground } from '../_components/animated-background';
 import z from 'zod';
 import { cn } from '../_lib/utils';
 import { Button } from '../_components/ui/button';
@@ -54,8 +55,9 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="bg-muted flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm md:max-w-3xl">
+    <div className="relative flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
+      <AnimatedBackground />
+      <div className="relative z-10 w-full max-w-sm md:max-w-3xl">
         <div className="flex flex-col gap-6">
           <Card className="overflow-hidden p-0">
             <CardContent className="grid p-0 md:grid-cols-2">

@@ -61,7 +61,7 @@ export function LoginForm({
   };
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
-      <Card className="overflow-hidden p-0">
+      <Card className="overflow-hidden border-white/10 p-0 shadow-2xl shadow-black/20">
         <CardContent className="grid p-0 md:grid-cols-2">
           <form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
             <div className="flex flex-col gap-6">
@@ -164,13 +164,19 @@ export function LoginForm({
           </div>
         </CardContent>
       </Card>
-      <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
+      <div className="text-center text-xs text-balance text-slate-400 *:[a]:underline *:[a]:underline-offset-4 *:[a]:hover:text-cyan-300">
         Ao clicar em entrar, você concorda com nossos{' '}
-        <Link href="/public/terms" className="hover:text-primary underline">
+        <Link
+          href="/public/terms"
+          className="text-slate-300 underline hover:text-cyan-300"
+        >
           Termos de Serviço
         </Link>
         <span> e </span>
-        <Link href="/public/privacy" className="hover:text-primary underline">
+        <Link
+          href="/public/privacy"
+          className="text-slate-300 underline hover:text-cyan-300"
+        >
           Política de Privacidade
         </Link>
       </div>
