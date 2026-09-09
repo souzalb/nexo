@@ -87,9 +87,9 @@ export function EditUserModal({
         onClick: async () => {
           try {
             const response = await fetch(
-              `./api/users/${user.id}/reset-password`,
+              `/api/users/${user.id}/reset-password`,
               {
-                method: 'POST',
+                method: 'PATCH',
               },
             );
             if (!response.ok) {
