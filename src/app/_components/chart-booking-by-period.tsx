@@ -49,11 +49,15 @@ const chartConfig = {
 
 export function BookingsByPeriodChart({ data }: BookingsByPeriodChartProps) {
   // Transforma os dados recebidos para o formato que o gráfico espera
+  const labelMap: Record<string, string> = {
+    MANHA: 'Manhã',
+    TARDE: 'Tarde',
+    NOITE: 'Noite',
+  };
+
   const chartData = data.map((item) => ({
     period: item.period ? item.period.toLowerCase() : 'desconhecido',
-    label: item.period
-      ? item.period.charAt(0) + item.period.slice(1).toLowerCase()
-      : 'Desconhecido',
+    label: item.period ? labelMap[item.period] || item.period : 'Desconhecido',
     total: item._count.period,
     fill: `var(--color-${item.period?.toLowerCase()})`,
   }));
@@ -89,6 +93,28 @@ export function BookingsByPeriodChart({ data }: BookingsByPeriodChartProps) {
             </Pie>
           </PieChart>
         </ChartContainer>
+        <div className="mt-4 flex justify-center gap-4">
+          {chartData.map((entry) => {
+            const colorMap: Record<string, string> = {
+              manha: '#3b82f6',
+              tarde: '#f59e0b',
+              noite: '#ef4444',
+            };
+            return (
+              <div key={entry.period} className="flex items-center gap-2">
+                <span
+                  className="inline-block h-3 w-3 rounded-full"
+                  style={{
+                    backgroundColor: colorMap[entry.period] || '#6b7280',
+                  }}
+                />
+                <span className="text-muted-foreground text-sm">
+                  {entry.label} ({entry.total})
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 text-sm">
         <div className="flex gap-2 leading-none font-medium">
