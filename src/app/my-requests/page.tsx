@@ -3,7 +3,6 @@ import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
 import { SidebarProvider, SidebarInset } from '../_components/ui/sidebar';
 import { BookingRequestsClient } from '../_components/booking-request-client';
-import { useSession } from 'next-auth/react';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../_lib/auth';
 
