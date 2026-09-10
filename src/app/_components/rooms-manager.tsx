@@ -109,6 +109,7 @@ export default function RoomsManager({
       />
 
       <RoomFormModal
+        key={selectedRoomId || 'new'}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         room={selectedRoom}

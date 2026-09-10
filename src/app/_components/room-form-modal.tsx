@@ -123,29 +123,24 @@ export function RoomFormModal({
     register,
     handleSubmit,
     reset,
-    setValue,
     control,
     formState: { errors, isSubmitting },
   } = useForm<RoomFormData>({
     resolver: zodResolver(roomSchema),
-    defaultValues: { type: '', location: '', resourceIds: [] },
+    defaultValues: room
+      ? {
+          name: room.name,
+          capacity: room.capacity,
+          type: room.type,
+          location: room.location || '',
+          resourceIds: room.resources.map((r) => r.id),
+        }
+      : { name: '', capacity: 0, type: '', location: '', resourceIds: [] },
   });
 
   useEffect(() => {
     setInternalRoom(room);
-    if (room && isOpen) {
-      setValue('name', room.name);
-      setValue('capacity', room.capacity);
-      setValue('type', room.type);
-      setValue('location', room.location || '');
-      setValue(
-        'resourceIds',
-        room.resources.map((r) => r.id),
-      );
-    } else {
-      reset();
-    }
-  }, [room, isOpen, setValue, reset]);
+  }, [room]);
 
   const handleFormSubmit = async (data: RoomFormData) => {
     const isEditing = !!internalRoom;
@@ -219,6 +214,11 @@ export function RoomFormModal({
 
   if (!isOpen) return null;
 
+  console.log(
+    '[DEBUG RoomFormModal] room prop:',
+    room ? { type: room.type, location: room.location } : null,
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
       <div className="bg-secondary w-full max-w-2xl rounded-lg p-8">
@@ -285,7 +285,7 @@ export function RoomFormModal({
                 render={({ field }) => (
                   <Select
                     onValueChange={field.onChange}
-                    value={field.value || ''}
+                    value={field.value || undefined}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Selecione um tipo" />
@@ -323,7 +323,7 @@ export function RoomFormModal({
                 render={({ field }) => (
                   <Select
                     onValueChange={field.onChange}
-                    value={field.value || ''}
+                    value={field.value || undefined}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Selecione um bloco" />
