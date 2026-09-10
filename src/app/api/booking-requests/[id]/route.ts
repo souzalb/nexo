@@ -202,6 +202,16 @@ export async function PATCH(
       },
     });
 
+    // Marca como lidas as notificações dos admins referentes a esta solicitação
+    await db.notification.updateMany({
+      where: {
+        link: '/requests',
+        read: false,
+        message: { contains: request.classCode },
+      },
+      data: { read: true },
+    });
+
     const emailHtml = await render(
       UserStatusEmail({
         userName: request.user.name || 'Utilizador',
