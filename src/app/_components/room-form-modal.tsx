@@ -128,7 +128,7 @@ export function RoomFormModal({
     formState: { errors, isSubmitting },
   } = useForm<RoomFormData>({
     resolver: zodResolver(roomSchema),
-    defaultValues: { resourceIds: [] },
+    defaultValues: { type: '', location: '', resourceIds: [] },
   });
 
   useEffect(() => {
