@@ -22,7 +22,7 @@ async function getRooms(filters: {
   capacity?: number;
   availabilityStartDate?: string;
   availabilityEndDate?: string;
-  availabilityPeriod?: Period;
+  availabilityPeriod?: Period | 'INTEGRAL';
   availabilityDayOfWeek?: string;
 }) {
   const {
@@ -46,7 +46,11 @@ async function getRooms(filters: {
     const timeSlotsToCheck: { startTime: Date; endTime: Date }[] = [];
     const currentDate = new Date(availabilityStartDate);
     const finalDate = new Date(availabilityEndDate);
-    const times = periodTimesUTC[availabilityPeriod];
+
+    const periodsToCheck: Period[] =
+      availabilityPeriod === 'INTEGRAL'
+        ? ['MANHA', 'TARDE']
+        : [availabilityPeriod as Period];
 
     while (currentDate <= finalDate) {
       // Se dias da semana foram selecionados, verifica se o dia atual corresponde (0 = Domingo, ..., 6 = Sábado)
@@ -57,14 +61,22 @@ async function getRooms(filters: {
         selectedDays.length === 0 ||
         selectedDays.includes(currentDate.getUTCDay().toString())
       ) {
-        const startTimeUTC = new Date(currentDate);
-        startTimeUTC.setUTCHours(times.start[0], times.start[1], 0, 0);
-        const endTimeUTC = new Date(currentDate);
-        endTimeUTC.setUTCHours(times.end[0], times.end[1], 0, 0);
-        if (endTimeUTC < startTimeUTC) {
-          endTimeUTC.setUTCDate(endTimeUTC.getUTCDate() + 1);
+        for (const p of periodsToCheck) {
+          const times = periodTimesUTC[p];
+          if (times) {
+            const startTimeUTC = new Date(currentDate);
+            startTimeUTC.setUTCHours(times.start[0], times.start[1], 0, 0);
+            const endTimeUTC = new Date(currentDate);
+            endTimeUTC.setUTCHours(times.end[0], times.end[1], 0, 0);
+            if (endTimeUTC < startTimeUTC) {
+              endTimeUTC.setUTCDate(endTimeUTC.getUTCDate() + 1);
+            }
+            timeSlotsToCheck.push({
+              startTime: startTimeUTC,
+              endTime: endTimeUTC,
+            });
+          }
         }
-        timeSlotsToCheck.push({ startTime: startTimeUTC, endTime: endTimeUTC });
       }
       currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }

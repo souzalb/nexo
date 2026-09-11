@@ -22,7 +22,8 @@ async function getRooms(filters: {
   capacity?: number;
   availabilityStartDate?: string;
   availabilityEndDate?: string;
-  availabilityPeriod?: Period;
+  availabilityPeriod?: Period | 'INTEGRAL';
+  availabilityDayOfWeek?: string;
 }) {
   const {
     name,
@@ -32,10 +33,10 @@ async function getRooms(filters: {
     availabilityStartDate,
     availabilityEndDate,
     availabilityPeriod,
+    availabilityDayOfWeek,
   } = filters;
 
   const whereClause: any = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
-
   if (name) whereClause.name = { contains: name, mode: 'insensitive' };
   if (location) whereClause.location = location;
   if (type) whereClause.type = type;
@@ -48,20 +49,38 @@ async function getRooms(filters: {
 
     const currentDate = new Date(availabilityStartDate);
     const finalDate = new Date(availabilityEndDate);
-    const times = periodTimesUTC[availabilityPeriod];
+
+    const periodsToCheck: Period[] =
+      availabilityPeriod === 'INTEGRAL'
+        ? ['MANHA', 'TARDE']
+        : [availabilityPeriod as Period];
 
     while (currentDate <= finalDate) {
-      const startTimeUTC = new Date(currentDate);
-      startTimeUTC.setUTCHours(times.start[0], times.start[1], 0, 0);
-
-      const endTimeUTC = new Date(currentDate);
-      endTimeUTC.setUTCHours(times.end[0], times.end[1], 0, 0);
-
-      if (endTimeUTC < startTimeUTC) {
-        endTimeUTC.setUTCDate(endTimeUTC.getUTCDate() + 1);
+      // Se dias da semana foram selecionados, verifica se o dia atual corresponde (0 = Domingo, ..., 6 = Sábado)
+      const selectedDays = availabilityDayOfWeek
+        ? availabilityDayOfWeek.split(',')
+        : [];
+      if (
+        selectedDays.length === 0 ||
+        selectedDays.includes(currentDate.getUTCDay().toString())
+      ) {
+        for (const p of periodsToCheck) {
+          const times = periodTimesUTC[p];
+          if (times) {
+            const startTimeUTC = new Date(currentDate);
+            startTimeUTC.setUTCHours(times.start[0], times.start[1], 0, 0);
+            const endTimeUTC = new Date(currentDate);
+            endTimeUTC.setUTCHours(times.end[0], times.end[1], 0, 0);
+            if (endTimeUTC < startTimeUTC) {
+              endTimeUTC.setUTCDate(endTimeUTC.getUTCDate() + 1);
+            }
+            timeSlotsToCheck.push({
+              startTime: startTimeUTC,
+              endTime: endTimeUTC,
+            });
+          }
+        }
       }
-
-      timeSlotsToCheck.push({ startTime: startTimeUTC, endTime: endTimeUTC });
       currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
 
@@ -147,8 +166,8 @@ export default async function RoomsClientPageWrapper({
     availabilityStartDate: resolvedSearchParams.availabilityStartDate,
     availabilityEndDate: resolvedSearchParams.availabilityEndDate,
     availabilityPeriod: resolvedSearchParams.availabilityPeriod as
-      | Period
-      | undefined,
+      Period | undefined,
+    availabilityDayOfWeek: resolvedSearchParams.availabilityDayOfWeek,
   };
 
   const [rooms, { allLocations, allTypes }, users] = await Promise.all([

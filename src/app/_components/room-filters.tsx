@@ -1,6 +1,8 @@
 'use client';
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useTransition } from 'react';
+import { cn } from '@/app/_lib/utils';
 
 import { IconFilterX } from '@tabler/icons-react';
 import * as React from 'react';
@@ -12,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
+import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 
@@ -24,31 +27,46 @@ export function RoomFilters({ allLocations, allTypes }: RoomFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   // Função genérica para atualizar a URL com um novo filtro
-  const handleFilterChange = (key: string, value: string) => {
+  const handleFilterChange = (key: string, value: string | string[]) => {
     const current = new URLSearchParams(Array.from(searchParams.entries()));
 
-    if (!value || value === 'all') {
+    let finalValue = value;
+    if (Array.isArray(value)) {
+      finalValue = value.join(',');
+    }
+
+    if (!finalValue || finalValue === 'all' || finalValue.length === 0) {
       current.delete(key);
     } else {
-      current.set(key, value);
+      current.set(key, finalValue as string);
     }
 
     const search = current.toString();
     const query = search ? `?${search}` : '';
     // scroll: false evita que a página salte para o topo a cada alteração de filtro
-    router.push(`${pathname}${query}`, { scroll: false });
+    startTransition(() => {
+      router.push(`${pathname}${query}`, { scroll: false });
+    });
   };
 
   const clearFilters = () => {
-    router.push(pathname, { scroll: false });
+    startTransition(() => {
+      router.push(pathname, { scroll: false });
+    });
   };
 
   return (
-    <Card className="p-0">
+    <Card
+      className={cn(
+        'p-0 transition-opacity',
+        isPending && 'pointer-events-none cursor-wait opacity-70',
+      )}
+    >
       <CardContent className="p-4">
-        <div className="flex items-center gap-4">
+        <div className="grid grid-cols-1 items-center gap-4 lg:flex">
           <span className="hidden text-sm font-semibold text-gray-700 sm:block dark:text-gray-100">
             Filtros:
           </span>
@@ -100,7 +118,7 @@ export function RoomFilters({ allLocations, allTypes }: RoomFiltersProps) {
 
         {/* --- SECÇÃO DE FILTRO DE DISPONIBILIDADE --- */}
 
-        <div className="mt-4 flex items-center gap-4 border-t pt-4">
+        <div className="mt-4 grid grid-cols-1 items-center gap-4 border-t pt-4 lg:flex">
           <span className="hidden text-sm font-semibold text-nowrap text-gray-700 sm:block dark:text-gray-100">
             Filtros por disponibilidade:
           </span>
@@ -118,6 +136,7 @@ export function RoomFilters({ allLocations, allTypes }: RoomFiltersProps) {
               <SelectItem value="MANHA">Manhã (07:30 - 11:30)</SelectItem>
               <SelectItem value="TARDE">Tarde (13:00 - 17:00)</SelectItem>
               <SelectItem value="NOITE">Noite (18:30 - 21:30)</SelectItem>
+              <SelectItem value="INTEGRAL">Integral (Manhã e Tarde)</SelectItem>
             </SelectContent>
           </Select>
           <h3 className="hidden text-sm text-nowrap text-gray-700 sm:block dark:text-gray-100">
@@ -142,12 +161,77 @@ export function RoomFilters({ allLocations, allTypes }: RoomFiltersProps) {
               handleFilterChange('availabilityEndDate', e.target.value)
             }
           />
+        </div>
+
+        {/* Linha separada para os dias da semana e botão limpar */}
+        <div className="mt-4 flex flex-col items-start justify-between gap-4 border-t pt-4 lg:flex-row lg:items-center">
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-100">
+              Dias da semana:
+            </span>
+            <ToggleGroup
+              type="multiple"
+              variant="outline"
+              className="flex-wrap justify-start gap-1"
+              value={
+                searchParams.get('availabilityDayOfWeek')?.split(',') || []
+              }
+              onValueChange={(value) =>
+                handleFilterChange('availabilityDayOfWeek', value)
+              }
+            >
+              <ToggleGroupItem
+                value="1"
+                className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground cursor-pointer rounded-md border"
+              >
+                Seg
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="2"
+                className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground cursor-pointer rounded-md border"
+              >
+                Ter
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="3"
+                className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground cursor-pointer rounded-md border"
+              >
+                Qua
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="4"
+                className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground cursor-pointer rounded-md border"
+              >
+                Qui
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="5"
+                className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground cursor-pointer rounded-md border"
+              >
+                Sex
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="6"
+                className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground cursor-pointer rounded-md border"
+              >
+                Sáb
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="0"
+                className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground cursor-pointer rounded-md border"
+              >
+                Dom
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+
           <Button
             variant="secondary"
             onClick={clearFilters}
-            className="mt-2 text-red-500 hover:bg-red-50 hover:text-red-600 sm:mt-0"
+            className="w-full text-red-500 hover:bg-red-50 hover:text-red-600 lg:w-auto"
           >
-            <IconFilterX />
+            <IconFilterX className="mr-2 h-4 w-4" />
+            Limpar Filtros
           </Button>
         </div>
       </CardContent>

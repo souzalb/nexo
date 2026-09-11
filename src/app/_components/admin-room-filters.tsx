@@ -135,6 +135,7 @@ export function AdminRoomFilters({
               <SelectItem value="MANHA">Manhã (07:30 - 11:30)</SelectItem>
               <SelectItem value="TARDE">Tarde (13:00 - 17:00)</SelectItem>
               <SelectItem value="NOITE">Noite (18:30 - 21:30)</SelectItem>
+              <SelectItem value="INTEGRAL">Integral (Manhã e Tarde)</SelectItem>
             </SelectContent>
           </Select>
           <h3 className="hidden text-sm text-nowrap text-gray-700 sm:block dark:text-gray-100">

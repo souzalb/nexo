@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -124,6 +124,7 @@ export function RecurringBookingModal({
   initialRoomId,
 }: RecurringBookingModalProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session } = useSession();
 
   const [selectedPeriod, setSelectedPeriod] = React.useState<string | null>(
@@ -145,9 +146,56 @@ export function RecurringBookingModal({
 
   React.useEffect(() => {
     if (isOpen) {
-      setValue('roomId', initialRoomId ? String(initialRoomId) : '');
+      let initialStartDate = '';
+      let initialEndDate = '';
+      let initialWeekdays: number[] = [];
+      let initialTimeSlots: UiTimeSlot[] = [];
+      let initialPeriod: string | null = null;
+
+      if (searchParams) {
+        initialStartDate = searchParams.get('availabilityStartDate') || '';
+        initialEndDate = searchParams.get('availabilityEndDate') || '';
+        const dayParam = searchParams.get('availabilityDayOfWeek');
+        if (dayParam) {
+          initialWeekdays = dayParam.split(',').map(Number);
+        }
+
+        const periodParam =
+          searchParams.get('availabilityPeriod') || searchParams.get('period');
+        if (
+          periodParam &&
+          periodParam !== 'all' &&
+          periodParam !== 'INTEGRAL'
+        ) {
+          initialPeriod = periodParam;
+          initialTimeSlots =
+            (periodOptions
+              .find((p) => p.value === periodParam)
+              ?.slots.map((s) => s.id) as UiTimeSlot[]) || [];
+        } else if (periodParam === 'INTEGRAL') {
+          const manhaSlots =
+            periodOptions
+              .find((p) => p.value === 'MANHA')
+              ?.slots.map((s) => s.id) || [];
+          const tardeSlots =
+            periodOptions
+              .find((p) => p.value === 'TARDE')
+              ?.slots.map((s) => s.id) || [];
+          initialTimeSlots = [...manhaSlots, ...tardeSlots] as UiTimeSlot[];
+        }
+      }
+
+      setSelectedPeriod(initialPeriod);
+      reset({
+        roomId: initialRoomId ? String(initialRoomId) : '',
+        startDate: initialStartDate,
+        endDate: initialEndDate,
+        weekdays: initialWeekdays,
+        timeSlots: initialTimeSlots,
+        classCode: '',
+      });
     }
-  }, [isOpen, initialRoomId, setValue]);
+  }, [isOpen, initialRoomId, searchParams, reset]);
 
   const timeSlotsValue = watch('timeSlots');
 
@@ -356,8 +404,9 @@ export function RecurringBookingModal({
             </label>
 
             <Select
+              key={selectedPeriod || 'empty'}
               onValueChange={(value) => setSelectedPeriod(value)}
-              value={selectedPeriod || ''}
+              value={selectedPeriod || undefined}
             >
               <SelectTrigger className="mt-2 w-full">
                 <SelectValue placeholder="Selecione um período para ver os horários" />
