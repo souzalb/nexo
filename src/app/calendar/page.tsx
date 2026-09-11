@@ -66,6 +66,7 @@ async function getBookings(filters: {
     end: booking.endTime,
     ...getPeriodColors(booking.period),
     extendedProps: {
+      rawTitle: booking.title,
       userName: booking.user.name,
       roomName: booking.room.name,
       roomId: booking.roomId,

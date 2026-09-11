@@ -73,7 +73,10 @@ export default function BookingCalendar({
   // Preenche o formulário quando o modal de edição é aberto
   useEffect(() => {
     if (selectedEvent && isFormModalOpen) {
-      setValue('title', selectedEvent.event.title);
+      setValue(
+        'title',
+        selectedEvent.event.extendedProps.rawTitle || selectedEvent.event.title,
+      );
       const roomId = selectedEvent.event.extendedProps.roomId;
       if (roomId) {
         setValue('roomId', roomId);
@@ -91,22 +94,73 @@ export default function BookingCalendar({
   const handleEditFormSubmit = async (data: BookingFormData) => {
     if (!selectedEvent) return;
 
-    try {
-      const response = await fetch(`/api/bookings/${selectedEvent.event.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const responseData = await response.json();
-      if (!response.ok)
-        throw new Error(responseData.message || 'Falha na atualização');
+    const eventId = selectedEvent.event.id;
+    const groupId = selectedEvent.event.extendedProps.bookingGroupId;
+    const startDate = selectedEvent.event.start;
 
-      toast.success(`Reserva atualizada com sucesso!`);
-      handleCloseFormModal();
-      router.refresh();
-    } catch (error) {
-      toast.error((error as Error).message);
+    const performSingleEdit = async () => {
+      try {
+        const response = await fetch(`/api/bookings/${eventId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const responseData = await response.json();
+        if (!response.ok)
+          throw new Error(responseData.message || 'Falha na atualização');
+
+        toast.success(`Reserva atualizada com sucesso!`);
+        handleCloseFormModal();
+        router.refresh();
+      } catch (error) {
+        toast.error((error as Error).message);
+      }
+    };
+
+    const performRecurringEdit = async () => {
+      if (!startDate) return;
+      try {
+        const startDateIso = startDate.toISOString();
+        const response = await fetch(
+          `/api/bookings/group/${groupId}?startDate=${startDateIso}`,
+          {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+          },
+        );
+        const responseData = await response.json();
+        if (!response.ok)
+          throw new Error(responseData.message || 'Falha na atualização.');
+
+        toast.success(responseData.message);
+        handleCloseFormModal();
+        router.refresh();
+      } catch (error) {
+        toast.error((error as Error).message);
+      }
+    };
+
+    if (!groupId) {
+      // Se não for recorrente, edita direto
+      await performSingleEdit();
+      return;
     }
+
+    // Se for recorrente, pergunta
+    toast.info(`Editar a reserva "${selectedEvent.event.title}"`, {
+      description:
+        'Esta reserva faz parte de um agendamento recorrente. Como deseja salvar as alterações?',
+      duration: 10000,
+      action: {
+        label: 'Apenas Esta',
+        onClick: performSingleEdit,
+      },
+      cancel: {
+        label: 'Esta e as Futuras',
+        onClick: performRecurringEdit,
+      },
+    });
   };
 
   const handleEventClick = (clickInfo: EventClickArg) => {
