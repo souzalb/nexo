@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from './ui/select';
 import { Checkbox } from './ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const apiTimeSlotsEnum = z.enum([
@@ -78,7 +79,7 @@ const weekdaysOptions = [
 ];
 
 const periodOptions: {
-  value: 'MANHA' | 'TARDE' | 'NOITE';
+  value: 'MANHA' | 'TARDE' | 'NOITE' | 'INTEGRAL';
   label: string;
   slots: { id: UiTimeSlot; label: string }[];
 }[] = [
@@ -104,6 +105,16 @@ const periodOptions: {
     slots: [
       { id: 'NOITE_PRIMEIRO', label: '1º Horário (18:30 - 20:00)' },
       { id: 'NOITE_SEGUNDO', label: '2º Horário (20:00 - 21:30)' },
+    ],
+  },
+  {
+    value: 'INTEGRAL',
+    label: 'Integral (Manhã e Tarde)',
+    slots: [
+      { id: 'MANHA_PRIMEIRO', label: '1º Horário Manhã (07:30 - 09:30)' },
+      { id: 'MANHA_SEGUNDO', label: '2º Horário Manhã (09:30 - 11:30)' },
+      { id: 'TARDE_PRIMEIRO', label: '1º Horário Tarde (13:00 - 15:00)' },
+      { id: 'TARDE_SEGUNDO', label: '2º Horário Tarde (15:00 - 17:00)' },
     ],
   },
 ];
@@ -162,26 +173,12 @@ export function RecurringBookingModal({
 
         const periodParam =
           searchParams.get('availabilityPeriod') || searchParams.get('period');
-        if (
-          periodParam &&
-          periodParam !== 'all' &&
-          periodParam !== 'INTEGRAL'
-        ) {
+        if (periodParam && periodParam !== 'all') {
           initialPeriod = periodParam;
           initialTimeSlots =
             (periodOptions
               .find((p) => p.value === periodParam)
               ?.slots.map((s) => s.id) as UiTimeSlot[]) || [];
-        } else if (periodParam === 'INTEGRAL') {
-          const manhaSlots =
-            periodOptions
-              .find((p) => p.value === 'MANHA')
-              ?.slots.map((s) => s.id) || [];
-          const tardeSlots =
-            periodOptions
-              .find((p) => p.value === 'TARDE')
-              ?.slots.map((s) => s.id) || [];
-          initialTimeSlots = [...manhaSlots, ...tardeSlots] as UiTimeSlot[];
         }
       }
 
@@ -199,54 +196,23 @@ export function RecurringBookingModal({
 
   const timeSlotsValue = watch('timeSlots');
 
-  const handleFullPeriodChange = (
-    checked: boolean,
-    period: 'MANHA' | 'TARDE' | 'NOITE',
-  ) => {
+  const handleFullPeriodChange = (checked: boolean, periodValue: string) => {
     const currentSlots = timeSlotsValue || [];
-    const periodSlots: UiTimeSlot[] = [
-      `${period}_PRIMEIRO` as UiTimeSlot,
-      `${period}_SEGUNDO` as UiTimeSlot,
-    ];
+    const periodInfo = periodOptions.find((p) => p.value === periodValue);
+    const periodSlots = periodInfo?.slots.map((s) => s.id) || [];
 
     if (checked) {
       const newSlots = [...new Set([...currentSlots, ...periodSlots])];
-      setValue('timeSlots', newSlots);
+      setValue('timeSlots', newSlots as UiTimeSlot[]);
     } else {
       setValue(
         'timeSlots',
-        currentSlots.filter((slot) => !periodSlots.includes(slot)),
+        currentSlots.filter(
+          (slot) => !periodSlots.includes(slot),
+        ) as UiTimeSlot[],
       );
     }
   };
-
-  const handleIntegralPeriodChange = (checked: boolean) => {
-    const currentSlots = timeSlotsValue || [];
-    const manhaSlots: UiTimeSlot[] = ['MANHA_PRIMEIRO', 'MANHA_SEGUNDO'];
-    const tardeSlots: UiTimeSlot[] = ['TARDE_PRIMEIRO', 'TARDE_SEGUNDO'];
-    const integralSlots = [...manhaSlots, ...tardeSlots];
-
-    if (checked) {
-      // Adiciona os horários da manhã e tarde, removendo os da noite para evitar conflito.
-      const newSlots = [...new Set([...currentSlots, ...integralSlots])].filter(
-        (slot) => !slot.startsWith('NOITE'),
-      );
-      setValue('timeSlots', newSlots);
-    } else {
-      // Remove os horários da manhã e tarde.
-      setValue(
-        'timeSlots',
-        currentSlots.filter((slot) => !integralSlots.includes(slot)),
-      );
-    }
-  };
-
-  const isIntegralSelected = [
-    'MANHA_PRIMEIRO',
-    'MANHA_SEGUNDO',
-    'TARDE_PRIMEIRO',
-    'TARDE_SEGUNDO',
-  ].every((slot) => timeSlotsValue?.includes(slot as UiTimeSlot));
 
   const handleFormSubmit = async (data: FormData) => {
     const isRequest = session?.user.role !== 'ADMIN';
@@ -302,17 +268,17 @@ export function RecurringBookingModal({
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
-      <div className="bg-secondary w-full max-w-lg rounded-lg p-8">
-        <h2 className="mb-6 text-xl font-bold">
-          {' '}
-          {session?.user.role === 'ADMIN'
-            ? 'Criar Reserva'
-            : 'Solicitar Reserva'}
-        </h2>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className="bg-secondary max-h-[90vh] w-full max-w-lg overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="mb-2 text-xl font-bold">
+            {' '}
+            {session?.user.role === 'ADMIN'
+              ? 'Criar Reserva'
+              : 'Solicitar Reserva'}
+          </DialogTitle>
+        </DialogHeader>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
           {['ADMIN', 'MANAGER'].includes(session?.user.role ?? '') && (
             <div>
@@ -419,22 +385,6 @@ export function RecurringBookingModal({
                 ))}
               </SelectContent>
             </Select>
-
-            <div className="mt-2 flex items-center space-x-2 rounded-md border p-2">
-              <Checkbox
-                id="INTEGRAL_PERIODO"
-                checked={isIntegralSelected}
-                onCheckedChange={(checked) =>
-                  handleIntegralPeriodChange(Boolean(checked))
-                }
-              />
-              <label
-                htmlFor="INTEGRAL_PERIODO"
-                className="text-sm text-gray-700 dark:text-gray-100"
-              >
-                Período Integral (Manhã + Tarde)
-              </label>
-            </div>
           </div>
 
           {selectedPeriod && (
@@ -480,8 +430,7 @@ export function RecurringBookingModal({
                         onCheckedChange={(checked) =>
                           handleFullPeriodChange(
                             Boolean(checked),
-                            // eslint-disable-next-line
-                            periodInfo.value as any,
+                            periodInfo.value,
                           )
                         }
                       />
@@ -594,7 +543,7 @@ export function RecurringBookingModal({
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
