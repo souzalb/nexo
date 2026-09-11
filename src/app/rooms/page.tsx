@@ -23,6 +23,7 @@ async function getRooms(filters: {
   availabilityStartDate?: string;
   availabilityEndDate?: string;
   availabilityPeriod?: Period;
+  availabilityDayOfWeek?: string;
 }) {
   const {
     name,
@@ -32,6 +33,7 @@ async function getRooms(filters: {
     availabilityStartDate,
     availabilityEndDate,
     availabilityPeriod,
+    availabilityDayOfWeek,
   } = filters;
   const whereClause: any = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
   if (name) whereClause.name = { contains: name, mode: 'insensitive' };
@@ -47,14 +49,23 @@ async function getRooms(filters: {
     const times = periodTimesUTC[availabilityPeriod];
 
     while (currentDate <= finalDate) {
-      const startTimeUTC = new Date(currentDate);
-      startTimeUTC.setUTCHours(times.start[0], times.start[1], 0, 0);
-      const endTimeUTC = new Date(currentDate);
-      endTimeUTC.setUTCHours(times.end[0], times.end[1], 0, 0);
-      if (endTimeUTC < startTimeUTC) {
-        endTimeUTC.setUTCDate(endTimeUTC.getUTCDate() + 1);
+      // Se dias da semana foram selecionados, verifica se o dia atual corresponde (0 = Domingo, ..., 6 = Sábado)
+      const selectedDays = availabilityDayOfWeek
+        ? availabilityDayOfWeek.split(',')
+        : [];
+      if (
+        selectedDays.length === 0 ||
+        selectedDays.includes(currentDate.getUTCDay().toString())
+      ) {
+        const startTimeUTC = new Date(currentDate);
+        startTimeUTC.setUTCHours(times.start[0], times.start[1], 0, 0);
+        const endTimeUTC = new Date(currentDate);
+        endTimeUTC.setUTCHours(times.end[0], times.end[1], 0, 0);
+        if (endTimeUTC < startTimeUTC) {
+          endTimeUTC.setUTCDate(endTimeUTC.getUTCDate() + 1);
+        }
+        timeSlotsToCheck.push({ startTime: startTimeUTC, endTime: endTimeUTC });
       }
-      timeSlotsToCheck.push({ startTime: startTimeUTC, endTime: endTimeUTC });
       currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
 
@@ -135,8 +146,8 @@ export default async function AdminRoomsPage({
     availabilityStartDate: resolvedSearchParams.availabilityStartDate,
     availabilityEndDate: resolvedSearchParams.availabilityEndDate,
     availabilityPeriod: resolvedSearchParams.availabilityPeriod as
-      | Period
-      | undefined,
+      Period | undefined,
+    availabilityDayOfWeek: resolvedSearchParams.availabilityDayOfWeek,
   };
 
   const [rooms, { allLocations, allTypes, allResources }] = await Promise.all([
