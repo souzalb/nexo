@@ -28,18 +28,25 @@ const getPeriodColors = (period: Period | null) => {
 // Função de busca atualizada para aceitar e aplicar filtros
 async function getBookings(filters: {
   roomId?: string;
-  period?: Period;
+  period?: string;
   userId?: string;
+  location?: string;
 }) {
-  const whereClause: {
-    roomId?: string;
-    period?: Period;
-    userId?: string;
-  } = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const whereClause: any = {}; // Use any to allow flexible nested queries
 
   if (filters.roomId) whereClause.roomId = filters.roomId;
-  if (filters.period) whereClause.period = filters.period;
+  if (
+    filters.period &&
+    filters.period !== 'INTEGRAL' &&
+    filters.period !== 'all'
+  ) {
+    whereClause.period = filters.period as Period;
+  }
   if (filters.userId) whereClause.userId = filters.userId;
+  if (filters.location) {
+    whereClause.room = { location: filters.location };
+  }
 
   const bookings = await db.booking.findMany({
     where: whereClause,
@@ -91,6 +98,7 @@ export default async function CalendarPage({
     roomId?: string;
     period?: string;
     userId?: string;
+    location?: string;
   }>;
 }) {
   const session = await getServerSession(authOptions);
@@ -100,8 +108,9 @@ export default async function CalendarPage({
 
   const filters = {
     roomId: resolvedSearchParams?.roomId,
-    period: resolvedSearchParams?.period as Period | undefined,
+    period: resolvedSearchParams?.period,
     userId: resolvedSearchParams?.userId,
+    location: resolvedSearchParams?.location,
   };
 
   const pendingRequestsCountPromise = db.bookingRequest.count({
