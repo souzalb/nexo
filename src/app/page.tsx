@@ -116,7 +116,7 @@ async function getDashboardStats() {
 
   const maxBlocksPerPeriod = totalRooms * 40; // 40 blocos por período por sala (2 blocos/dia * 20 dias)
   const periodOccupancyData = bookingsByPeriod
-    .filter((p) => p.period && p.period !== 'INTEGRAL')
+    .filter((p) => p.period)
     .map((b) => ({
       period: b.period as string,
       occupancy: Math.min(
