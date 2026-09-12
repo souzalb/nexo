@@ -12,6 +12,7 @@ import { BookingsByRoomChart } from './_components/chart-bar-bookings';
 import { BookingsByPeriodChart } from './_components/chart-booking-by-period';
 import { TopUsersChart } from './_components/chart-power-users';
 import { BookingsByTypeChart } from './_components/chart-booking-by-room';
+import { RoomOccupancyChart } from './_components/chart-room-occupancy';
 import { authOptions } from './_lib/auth';
 
 // --- Tipos para os dados dos gráficos ---
@@ -103,6 +104,11 @@ async function getDashboardStats() {
     }),
   );
 
+  const occupancyData = bookingsByRoom.map((b) => ({
+    name: b.name,
+    occupancy: Math.min(100, Math.round((b.total / 120) * 100)), // 120 slots estimativa
+  }));
+
   return {
     bookingsByPeriod: bookingsByPeriod.filter(
       (p) => p.period,
@@ -110,6 +116,7 @@ async function getDashboardStats() {
     bookingsByRoom,
     topUsers,
     bookingsByType,
+    occupancyData,
   };
 }
 
@@ -120,8 +127,13 @@ export default async function Page() {
     redirect('/login');
   }
 
-  const { bookingsByPeriod, bookingsByRoom, topUsers, bookingsByType } =
-    await getDashboardStats();
+  const {
+    bookingsByPeriod,
+    bookingsByRoom,
+    topUsers,
+    bookingsByType,
+    occupancyData,
+  } = await getDashboardStats();
 
   return (
     <SidebarProvider
@@ -142,7 +154,8 @@ export default async function Page() {
               <div className="px-4 lg:px-6">
                 <ChartAreaInteractive />
               </div>
-              <div className="grid grid-cols-1 gap-4 px-4 md:grid-cols-2 lg:grid-cols-4 lg:px-6">
+              <div className="grid grid-cols-1 gap-4 px-4 md:grid-cols-2 lg:grid-cols-3 lg:px-6">
+                <RoomOccupancyChart data={occupancyData} />
                 <BookingsByRoomChart data={bookingsByRoom} />
                 <BookingsByPeriodChart data={bookingsByPeriod} />
                 <TopUsersChart data={topUsers} />
