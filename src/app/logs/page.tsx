@@ -35,8 +35,8 @@ export default async function AuditLogPage() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="p-6 pt-4">
-          <div>
+        <div className="flex h-[calc(100vh-3rem)] min-h-0 flex-1 flex-col p-6 pt-4">
+          <div className="flex-none">
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
               Logs de Auditoria
             </h1>

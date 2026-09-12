@@ -23,7 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
-import { IconFilter, IconFilterX } from '@tabler/icons-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { IconFilter, IconFilterX, IconEye } from '@tabler/icons-react';
 
 type AuditLog = {
   id: string;
@@ -60,6 +61,7 @@ export function AuditLogManager({ allUsers }: AuditLogManagerProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [activeFilters, setActiveFilters] = useState<Filters>({});
+  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
   const { register, handleSubmit, control, reset } = useForm<Filters>();
 
@@ -105,8 +107,8 @@ export function AuditLogManager({ allUsers }: AuditLogManagerProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <div className="mt-2 flex min-h-0 flex-1 flex-col space-y-6">
+      <Card className="flex-none">
         <CardContent className="flex flex-col items-center justify-between gap-4 px-4 lg:flex-row">
           <h3 className="hidden w-fit text-sm font-semibold text-gray-700 sm:block dark:text-gray-100">
             Filtros:
@@ -167,7 +169,7 @@ export function AuditLogManager({ allUsers }: AuditLogManagerProps) {
       </Card>
       <Card className="p-0">
         <CardContent className="p-0">
-          <div className="overflow-x-auto rounded-xl">
+          <div className="relative max-h-[65vh] overflow-auto rounded-t-xl">
             <Table>
               <TableHeader className="bg-secondary">
                 <TableRow>
@@ -175,6 +177,7 @@ export function AuditLogManager({ allUsers }: AuditLogManagerProps) {
                   <TableHead>Detalhes</TableHead>
                   <TableHead>Realizada Por</TableHead>
                   <TableHead>Data e Hora</TableHead>
+                  <TableHead className="w-16">Visualizar</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -193,6 +196,9 @@ export function AuditLogManager({ allUsers }: AuditLogManagerProps) {
                       <TableCell>
                         <Skeleton className="h-5 w-28" />
                       </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-8 w-8 rounded-md" />
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : logs.length > 0 ? (
@@ -201,7 +207,12 @@ export function AuditLogManager({ allUsers }: AuditLogManagerProps) {
                       <TableCell className="font-mono text-xs font-semibold">
                         {log.action}
                       </TableCell>
-                      <TableCell>{log.details}</TableCell>
+                      <TableCell
+                        className="max-w-[300px] truncate sm:max-w-[400px]"
+                        title={log.details}
+                      >
+                        {log.details}
+                      </TableCell>
                       <TableCell>
                         {log.user.name}{' '}
                         <span className="text-muted-foreground">
@@ -211,12 +222,21 @@ export function AuditLogManager({ allUsers }: AuditLogManagerProps) {
                       <TableCell>
                         {new Date(log.createdAt).toLocaleString('pt-BR')}
                       </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setSelectedLog(log)}
+                        >
+                          <IconEye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={4}
+                      colSpan={5}
                       className="py-12 text-center text-sm text-gray-500"
                     >
                       Nenhum log encontrado para os filtros selecionados.
@@ -227,7 +247,7 @@ export function AuditLogManager({ allUsers }: AuditLogManagerProps) {
             </Table>
           </div>
           {pagination && pagination.pageCount > 1 && (
-            <div className="flex items-center justify-end space-x-2 border-t p-4">
+            <div className="flex flex-none items-center justify-end space-x-2 border-t p-4">
               <span className="text-muted-foreground text-sm">
                 Página {pagination.currentPage} de {pagination.pageCount}
               </span>
@@ -251,6 +271,45 @@ export function AuditLogManager({ allUsers }: AuditLogManagerProps) {
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={!!selectedLog}
+        onOpenChange={(open) => !open && setSelectedLog(null)}
+      >
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Log</DialogTitle>
+          </DialogHeader>
+          {selectedLog && (
+            <div className="space-y-4 py-4 text-sm">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <span className="text-right font-semibold">Ação:</span>
+                <span className="bg-muted col-span-3 w-fit rounded p-1 font-mono text-xs">
+                  {selectedLog.action}
+                </span>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <span className="text-right font-semibold">Realizada Por:</span>
+                <span className="col-span-3">
+                  {selectedLog.user.name} ({selectedLog.user.email})
+                </span>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <span className="text-right font-semibold">Data/Hora:</span>
+                <span className="col-span-3">
+                  {new Date(selectedLog.createdAt).toLocaleString('pt-BR')}
+                </span>
+              </div>
+              <div className="grid grid-cols-4 items-start gap-4">
+                <span className="mt-1 text-right font-semibold">Detalhes:</span>
+                <div className="bg-muted/50 col-span-3 rounded-md p-3 text-gray-700 dark:text-gray-200">
+                  {selectedLog.details}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

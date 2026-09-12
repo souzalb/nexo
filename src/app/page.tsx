@@ -13,6 +13,7 @@ import { BookingsByPeriodChart } from './_components/chart-booking-by-period';
 import { TopUsersChart } from './_components/chart-power-users';
 import { BookingsByTypeChart } from './_components/chart-booking-by-room';
 import { RoomOccupancyChart } from './_components/chart-room-occupancy';
+import { PeriodOccupancyChart } from './_components/chart-period-occupancy';
 import { authOptions } from './_lib/auth';
 
 // --- Tipos para os dados dos gráficos ---
@@ -56,17 +57,21 @@ async function getDashboardStats() {
     where: { createdAt: { gte: thirtyDaysAgo } },
   });
 
+  const totalRoomsPromise = db.room.count();
+
   // Executa todas as buscas em paralelo para melhor performance
   const [
     bookingsByPeriod,
     bookingsByRoomQuery,
     topUsersQuery,
     bookingsWithRoomTypeQuery,
+    totalRooms,
   ] = await Promise.all([
     bookingsByPeriodPromise,
     bookingsByRoomPromise,
     topUsersPromise,
     bookingsWithRoomTypePromise,
+    totalRoomsPromise,
   ]);
 
   const bookingsByRoom: BookingsByRoomData[] = await Promise.all(
@@ -106,8 +111,19 @@ async function getDashboardStats() {
 
   const occupancyData = bookingsByRoom.map((b) => ({
     name: b.name,
-    occupancy: Math.min(100, Math.round((b.total / 120) * 100)), // 120 slots estimativa
+    occupancy: Math.min(100, Math.round((b.total / 120) * 100)), // 120 slots estimativa por sala
   }));
+
+  const maxBlocksPerPeriod = totalRooms * 40; // 40 blocos por período por sala (2 blocos/dia * 20 dias)
+  const periodOccupancyData = bookingsByPeriod
+    .filter((p) => p.period && p.period !== 'INTEGRAL')
+    .map((b) => ({
+      period: b.period as string,
+      occupancy: Math.min(
+        100,
+        Math.round((b._count.period / maxBlocksPerPeriod) * 100),
+      ),
+    }));
 
   return {
     bookingsByPeriod: bookingsByPeriod.filter(
@@ -117,6 +133,7 @@ async function getDashboardStats() {
     topUsers,
     bookingsByType,
     occupancyData,
+    periodOccupancyData,
   };
 }
 
@@ -133,6 +150,7 @@ export default async function Page() {
     topUsers,
     bookingsByType,
     occupancyData,
+    periodOccupancyData,
   } = await getDashboardStats();
 
   return (
@@ -156,6 +174,7 @@ export default async function Page() {
               </div>
               <div className="grid grid-cols-1 gap-4 px-4 md:grid-cols-2 lg:grid-cols-3 lg:px-6">
                 <RoomOccupancyChart data={occupancyData} />
+                <PeriodOccupancyChart data={periodOccupancyData} />
                 <BookingsByRoomChart data={bookingsByRoom} />
                 <BookingsByPeriodChart data={bookingsByPeriod} />
                 <TopUsersChart data={topUsers} />
