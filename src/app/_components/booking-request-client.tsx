@@ -64,7 +64,7 @@ export function BookingRequestsClient({
             className="flex flex-col items-start gap-2 py-2 sm:flex-row sm:items-center sm:justify-between"
           >
             <Card className="w-full p-0">
-              <CardContent className="flex items-end justify-between p-4">
+              <CardContent className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="space-y-2">
                   <div className="flex items-center">
                     <p className="font-bold">
@@ -99,7 +99,7 @@ export function BookingRequestsClient({
                     Pedido em: {new Date(req.createdAt).toLocaleString('pt-BR')}
                   </p>
                 </div>
-                <div className="flex h-full flex-col items-end space-y-20">
+                <div className="flex w-full flex-col gap-4 md:items-end lg:w-auto">
                   <div className="flex items-center">
                     <p className="text-sm text-gray-400">Status:</p>
                     {req.status == 'PENDENTE' ? (

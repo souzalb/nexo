@@ -223,7 +223,7 @@ export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
                   className="flex flex-col items-start gap-2 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>
-                    <p className="font-semibold text-gray-800">
+                    <p className="font-semibold text-gray-800 dark:text-gray-100">
                       {booking.title}
                       <button
                         onClick={() => setDetailsRoomId(booking.roomId)}
@@ -232,7 +232,7 @@ export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
                         ({booking.room.name})
                       </button>
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       {new Date(booking.startTime).toLocaleString('pt-BR')} -{' '}
                       {new Date(booking.endTime).toLocaleTimeString('pt-BR')}
                     </p>
@@ -269,7 +269,7 @@ export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
             {pastBookings.length > 0 ? (
               pastBookings.map((booking) => (
                 <li key={booking.id} className="py-4">
-                  <p className="font-semibold text-gray-800">
+                  <p className="font-semibold text-gray-800 dark:text-gray-100">
                     {booking.title}
                     <button
                       onClick={() => setDetailsRoomId(booking.roomId)}
@@ -278,7 +278,7 @@ export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
                       ({booking.room.name})
                     </button>
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
                     {new Date(booking.startTime).toLocaleString('pt-BR')}
                   </p>
                 </li>

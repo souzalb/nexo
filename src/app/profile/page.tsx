@@ -124,7 +124,7 @@ export default function ProfilePage() {
             </p>
           </div>
           {/* Formulário de Perfil */}
-          <div className="w-full rounded-lg border p-6 shadow-md">
+          <div className="w-full max-w-2xl rounded-lg border p-6 shadow-md">
             <h2 className="mb-4 text-xl font-semibold">Dados do Perfil</h2>
             <form
               onSubmit={handleSubmitProfile(onProfileSubmit)}
@@ -161,7 +161,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Formulário de Senha */}
-          <div className="w-full rounded-lg border p-6 shadow-md">
+          <div className="w-full max-w-2xl rounded-lg border p-6 shadow-md">
             <h2 className="mb-4 text-xl font-semibold">Alterar Senha</h2>
             <form
               onSubmit={handleSubmitPassword(onPasswordSubmit)}

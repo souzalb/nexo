@@ -237,7 +237,7 @@ export function RoomFormModal({
         </div>
 
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label
                 htmlFor="name"
@@ -271,7 +271,7 @@ export function RoomFormModal({
               )}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label
                 htmlFor="type"
@@ -353,7 +353,7 @@ export function RoomFormModal({
               name="resourceIds"
               control={control}
               render={({ field }) => (
-                <div className="mt-2 grid grid-cols-2 gap-4 rounded-md border p-4">
+                <div className="mt-2 grid grid-cols-1 gap-4 rounded-md border p-4 sm:grid-cols-2">
                   {allResources.map((resource) => (
                     <div key={resource.id} className="flex items-center">
                       <Checkbox

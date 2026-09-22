@@ -34,10 +34,10 @@ export function RoomsTable({ rooms, onEdit, onDelete }: RoomsTableProps) {
   if (rooms.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
-        <h3 className="text-xl font-semibold text-gray-800">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
           Nenhuma sala encontrada
         </h3>
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
           Comece por adicionar uma nova sala para a poder gerir aqui.
         </p>
       </div>

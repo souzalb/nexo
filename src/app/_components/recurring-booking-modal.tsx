@@ -491,7 +491,7 @@ export function RecurringBookingModal({
               name="weekdays"
               control={control}
               render={({ field }) => (
-                <div className="mt-2 grid grid-cols-3 gap-4">
+                <div className="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-3">
                   {weekdaysOptions.map((day) => (
                     <div key={day.id} className="flex items-center">
                       <Checkbox

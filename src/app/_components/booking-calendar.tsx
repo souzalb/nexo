@@ -418,15 +418,15 @@ export default function BookingCalendar({
 
       <div className="mb-4 flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 md:text-xl dark:text-gray-100">
+          <h1 className="text-xl font-bold text-gray-800 md:text-2xl dark:text-gray-100">
             Gerenciamento de Reservas
           </h1>
-          <p className="mt-1 text-sm text-gray-500 md:text-xs dark:text-gray-200">
+          <p className="mt-1 text-xs text-gray-500 md:text-sm dark:text-gray-200">
             Clique numa reserva para ver detalhes ou use o botão para criar
             reservas.
           </p>
         </div>
-        <div className="flex flex-col gap-2 md:flex-col lg:flex-row">
+        <div className="flex flex-col gap-2 lg:flex-row">
           {session?.user.role === 'ADMIN' && (
             <>
               <Button

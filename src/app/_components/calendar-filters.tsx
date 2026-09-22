@@ -56,7 +56,7 @@ export function CalendarFilters({ rooms, users }: CalendarFiltersProps) {
       <span className="hidden text-sm font-semibold text-gray-700 sm:block dark:text-gray-100">
         Filtros:
       </span>
-      <div className="grid flex-grow grid-cols-1 gap-4 sm:grid-cols-4">
+      <div className="grid flex-grow grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Filtro por Sala */}
         <Select
           value={searchParams.get('roomId') || 'all'}

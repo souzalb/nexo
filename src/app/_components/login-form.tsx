@@ -164,7 +164,7 @@ export function LoginForm({
           </div>
         </CardContent>
       </Card>
-      <div className="text-center text-xs text-balance text-slate-400 *:[a]:underline *:[a]:underline-offset-4 *:[a]:hover:text-cyan-300">
+      <div className="text-muted-foreground text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4 *:[a]:hover:text-cyan-300">
         Ao clicar em entrar, você concorda com nossos{' '}
         <Link
           href="/public/terms"

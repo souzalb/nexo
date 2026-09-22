@@ -51,7 +51,7 @@ export function RoomsClientLayout({
     <>
       <RoomFilters allLocations={allLocations} allTypes={allTypes} />
 
-      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
         {initialRooms.map((room) => (
           // A função para abrir o modal é passada como prop para cada item da sala.
           <RoomItem
@@ -62,10 +62,10 @@ export function RoomsClientLayout({
         ))}
         {initialRooms.length === 0 && (
           <div className="col-span-full flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
-            <h3 className="text-xl font-semibold text-gray-800">
+            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
               Nenhuma sala encontrada
             </h3>
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
               Tente ajustar os seus filtros ou limpar a seleção.
             </p>
           </div>

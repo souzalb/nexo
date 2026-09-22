@@ -239,10 +239,10 @@ export function UsersTable<TData, TValue>({
   return (
     <div className="w-full">
       <div>
-        <h1 className="text-2xl font-bold text-gray-800 md:text-xl dark:text-gray-100">
+        <h1 className="text-xl font-bold text-gray-800 md:text-2xl dark:text-gray-100">
           Gerenciamento de Usuários
         </h1>
-        <p className="text-sm text-gray-600 md:text-xs dark:text-gray-200">
+        <p className="text-xs text-gray-600 md:text-sm dark:text-gray-200">
           Adicione, edite ou remova os usuários do sistema.
         </p>
       </div>
@@ -286,7 +286,7 @@ export function UsersTable<TData, TValue>({
           </Button>
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-4 overflow-hidden rounded-lg border p-4 px-4 shadow-sm lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+      <div className="overflow-x-auto rounded-lg border shadow-sm">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
