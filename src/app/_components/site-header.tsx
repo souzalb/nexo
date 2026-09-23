@@ -22,6 +22,7 @@ export function SiteHeader() {
     '/rooms-client': 'Salas',
     '/requests': 'Solicitações',
     '/my-requests': 'Minhas Solicitações',
+    '/data-library': 'Data Library',
   };
   const nameHeader = headerNames[pathname];
   return (

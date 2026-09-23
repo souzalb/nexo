@@ -176,7 +176,7 @@ const nav = {
     },
     {
       name: 'Data Library',
-      url: '#',
+      url: '/data-library',
       icon: IconDatabase,
     },
   ],
