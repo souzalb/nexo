@@ -20,6 +20,7 @@ import {
 } from './ui/select';
 import { Checkbox } from './ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { ConflictModal, type ConflictItem } from './conflict-modal';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const apiTimeSlotsEnum = z.enum([
@@ -141,6 +142,8 @@ export function RecurringBookingModal({
   const [selectedPeriod, setSelectedPeriod] = React.useState<string | null>(
     null,
   );
+  const [conflicts, setConflicts] = React.useState<ConflictItem[]>([]);
+  const [conflictMessage, setConflictMessage] = React.useState('');
 
   const {
     register,
@@ -247,8 +250,14 @@ export function RecurringBookingModal({
         body: JSON.stringify(payload),
       });
       const responseData = await response.json();
-      if (!response.ok)
+      if (!response.ok) {
+        if (response.status === 409 && responseData.conflicts) {
+          setConflicts(responseData.conflicts);
+          setConflictMessage(responseData.message);
+          return;
+        }
         throw new Error(responseData.message || 'Falha ao criar reservas.');
+      }
       toast.success(
         isRequest
           ? 'Solicitação de reserva enviada com sucesso!'
@@ -265,285 +274,299 @@ export function RecurringBookingModal({
   const handleClose = () => {
     reset();
     setSelectedPeriod(null);
+    setConflicts([]);
+    setConflictMessage('');
     onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="bg-secondary max-h-[90vh] w-full max-w-lg overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="mb-2 text-xl font-bold">
-            {' '}
-            {session?.user.role === 'ADMIN'
-              ? 'Criar Reserva'
-              : 'Solicitar Reserva'}
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-          {['ADMIN', 'MANAGER'].includes(session?.user.role ?? '') && (
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+        <DialogContent className="bg-secondary max-h-[90vh] w-full max-w-lg overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="mb-2 text-xl font-bold">
+              {' '}
+              {session?.user.role === 'ADMIN'
+                ? 'Criar Reserva'
+                : 'Solicitar Reserva'}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+            {['ADMIN', 'MANAGER'].includes(session?.user.role ?? '') && (
+              <div>
+                <label
+                  htmlFor="userId"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-100"
+                >
+                  {session?.user.role === 'ADMIN'
+                    ? 'Reservar para o Usuário'
+                    : 'Solicitar para o Usuário'}
+                </label>
+                <Controller
+                  name="userId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecione um utilizador (opcional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            )}
+
             <div>
               <label
-                htmlFor="userId"
+                htmlFor="classCode"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-100"
               >
-                {session?.user.role === 'ADMIN'
-                  ? 'Reservar para o Usuário'
-                  : 'Solicitar para o Usuário'}
+                Título / Código da Turma
+              </label>
+              <Input id="classCode" {...register('classCode')} />
+              {errors.classCode && (
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.classCode.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="roomId"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-100"
+              >
+                Sala
               </label>
               <Controller
-                name="userId"
+                name="roomId"
                 control={control}
                 render={({ field }) => (
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={initialRoomId ? initialRoomId : field.value}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecione um utilizador (opcional)" />
+                      <SelectValue placeholder="Selecione uma sala" />
                     </SelectTrigger>
                     <SelectContent>
-                      {users.map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          {user.name}
+                      {rooms.map((room) => (
+                        <SelectItem key={room.id} value={room.id}>
+                          {room.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 )}
               />
-            </div>
-          )}
-
-          <div>
-            <label
-              htmlFor="classCode"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-100"
-            >
-              Título / Código da Turma
-            </label>
-            <Input id="classCode" {...register('classCode')} />
-            {errors.classCode && (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.classCode.message}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="roomId"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-100"
-            >
-              Sala
-            </label>
-            <Controller
-              name="roomId"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  onValueChange={field.onChange}
-                  value={initialRoomId ? initialRoomId : field.value}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione uma sala" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {rooms.map((room) => (
-                      <SelectItem key={room.id} value={room.id}>
-                        {room.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {errors.roomId && (
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.roomId.message}
+                </p>
               )}
-            />
-            {errors.roomId && (
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-100">
+                Período e Horários
+              </label>
+
+              <Select
+                key={selectedPeriod || 'empty'}
+                onValueChange={(value) => setSelectedPeriod(value)}
+                value={selectedPeriod || undefined}
+              >
+                <SelectTrigger className="mt-2 w-full">
+                  <SelectValue placeholder="Selecione um período para ver os horários" />
+                </SelectTrigger>
+                <SelectContent>
+                  {periodOptions.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedPeriod && (
+              <Controller
+                name="timeSlots"
+                control={control}
+                render={({ field }) => {
+                  const periodInfo = periodOptions.find(
+                    (p) => p.value === selectedPeriod,
+                  )!;
+                  const periodSlots = periodInfo.slots.map((s) => s.id);
+                  const isFullPeriodSelected = periodSlots.every((s) =>
+                    field.value?.includes(s),
+                  );
+
+                  return (
+                    <div className="mt-2 space-y-2 rounded-md border p-4">
+                      {periodInfo.slots.map((slot) => (
+                        <div key={slot.id} className="flex items-center">
+                          <Checkbox
+                            id={slot.id}
+                            checked={field.value?.includes(slot.id)}
+                            onCheckedChange={(checked) => {
+                              const currentValues = field.value || [];
+                              const newValues = checked
+                                ? [...currentValues, slot.id]
+                                : currentValues.filter((v) => v !== slot.id);
+                              field.onChange(newValues);
+                            }}
+                          />
+                          <label
+                            htmlFor={slot.id}
+                            className="ml-2 text-sm text-gray-700 dark:text-gray-100"
+                          >
+                            {slot.label}
+                          </label>
+                        </div>
+                      ))}
+                      <div className="flex items-center border-t pt-2">
+                        <Checkbox
+                          id={`${periodInfo.value}_INTEIRO`}
+                          checked={isFullPeriodSelected}
+                          onCheckedChange={(checked) =>
+                            handleFullPeriodChange(
+                              Boolean(checked),
+                              periodInfo.value,
+                            )
+                          }
+                        />
+                        <label
+                          htmlFor={`${periodInfo.value}_INTEIRO`}
+                          className="ml-2 text-sm font-semibold text-gray-700 dark:text-gray-100"
+                        >
+                          Período Inteiro
+                        </label>
+                      </div>
+                    </div>
+                  );
+                }}
+              />
+            )}
+            {errors.timeSlots && (
               <p className="mt-1 text-xs text-red-600">
-                {errors.roomId.message}
+                {errors.timeSlots.message}
               </p>
             )}
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-100">
-              Período e Horários
-            </label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="startDate"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-100"
+                >
+                  Data de Início
+                </label>
+                <Input id="startDate" type="date" {...register('startDate')} />
+                {errors.startDate && (
+                  <p className="mt-1 text-xs text-red-600">
+                    {errors.startDate.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label
+                  htmlFor="endDate"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-100"
+                >
+                  Data de Término
+                </label>
+                <Input id="endDate" type="date" {...register('endDate')} />
+                {errors.endDate && (
+                  <p className="mt-1 text-xs text-red-600">
+                    {errors.endDate.message}
+                  </p>
+                )}
+              </div>
+            </div>
 
-            <Select
-              key={selectedPeriod || 'empty'}
-              onValueChange={(value) => setSelectedPeriod(value)}
-              value={selectedPeriod || undefined}
-            >
-              <SelectTrigger className="mt-2 w-full">
-                <SelectValue placeholder="Selecione um período para ver os horários" />
-              </SelectTrigger>
-              <SelectContent>
-                {periodOptions.map((p) => (
-                  <SelectItem key={p.value} value={p.value}>
-                    {p.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {selectedPeriod && (
-            <Controller
-              name="timeSlots"
-              control={control}
-              render={({ field }) => {
-                const periodInfo = periodOptions.find(
-                  (p) => p.value === selectedPeriod,
-                )!;
-                const periodSlots = periodInfo.slots.map((s) => s.id);
-                const isFullPeriodSelected = periodSlots.every((s) =>
-                  field.value?.includes(s),
-                );
-
-                return (
-                  <div className="mt-2 space-y-2 rounded-md border p-4">
-                    {periodInfo.slots.map((slot) => (
-                      <div key={slot.id} className="flex items-center">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-100">
+                Dias da Semana
+              </label>
+              <Controller
+                name="weekdays"
+                control={control}
+                render={({ field }) => (
+                  <div className="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                    {weekdaysOptions.map((day) => (
+                      <div key={day.id} className="flex items-center">
                         <Checkbox
-                          id={slot.id}
-                          checked={field.value?.includes(slot.id)}
+                          id={`weekday-${day.id}`}
+                          checked={field.value?.includes(day.id)}
                           onCheckedChange={(checked) => {
-                            const currentValues = field.value || [];
-                            const newValues = checked
-                              ? [...currentValues, slot.id]
-                              : currentValues.filter((v) => v !== slot.id);
-                            field.onChange(newValues);
+                            const currentWeekdays = field.value || [];
+                            if (checked) {
+                              field.onChange([...currentWeekdays, day.id]);
+                            } else {
+                              field.onChange(
+                                currentWeekdays.filter(
+                                  (value) => value !== day.id,
+                                ),
+                              );
+                            }
                           }}
                         />
                         <label
-                          htmlFor={slot.id}
+                          htmlFor={`weekday-${day.id}`}
                           className="ml-2 text-sm text-gray-700 dark:text-gray-100"
                         >
-                          {slot.label}
+                          {day.label}
                         </label>
                       </div>
                     ))}
-                    <div className="flex items-center border-t pt-2">
-                      <Checkbox
-                        id={`${periodInfo.value}_INTEIRO`}
-                        checked={isFullPeriodSelected}
-                        onCheckedChange={(checked) =>
-                          handleFullPeriodChange(
-                            Boolean(checked),
-                            periodInfo.value,
-                          )
-                        }
-                      />
-                      <label
-                        htmlFor={`${periodInfo.value}_INTEIRO`}
-                        className="ml-2 text-sm font-semibold text-gray-700 dark:text-gray-100"
-                      >
-                        Período Inteiro
-                      </label>
-                    </div>
                   </div>
-                );
-              }}
-            />
-          )}
-          {errors.timeSlots && (
-            <p className="mt-1 text-xs text-red-600">
-              {errors.timeSlots.message}
-            </p>
-          )}
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="startDate"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-100"
-              >
-                Data de Início
-              </label>
-              <Input id="startDate" type="date" {...register('startDate')} />
-              {errors.startDate && (
+                )}
+              />
+              {errors.weekdays && (
                 <p className="mt-1 text-xs text-red-600">
-                  {errors.startDate.message}
+                  {errors.weekdays.message}
                 </p>
               )}
             </div>
-            <div>
-              <label
-                htmlFor="endDate"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-100"
-              >
-                Data de Término
-              </label>
-              <Input id="endDate" type="date" {...register('endDate')} />
-              {errors.endDate && (
-                <p className="mt-1 text-xs text-red-600">
-                  {errors.endDate.message}
-                </p>
-              )}
+
+            <div className="mt-6 flex justify-end gap-4 pt-4">
+              <Button type="button" variant="outline" onClick={handleClose}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {session?.user.role === 'ADMIN'
+                  ? isSubmitting
+                    ? 'Criando...'
+                    : 'Criar Reservas'
+                  : isSubmitting
+                    ? 'Solicitando...'
+                    : 'Solicitar Reservas'}
+              </Button>
             </div>
-          </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-100">
-              Dias da Semana
-            </label>
-            <Controller
-              name="weekdays"
-              control={control}
-              render={({ field }) => (
-                <div className="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-3">
-                  {weekdaysOptions.map((day) => (
-                    <div key={day.id} className="flex items-center">
-                      <Checkbox
-                        id={`weekday-${day.id}`}
-                        checked={field.value?.includes(day.id)}
-                        onCheckedChange={(checked) => {
-                          const currentWeekdays = field.value || [];
-                          if (checked) {
-                            field.onChange([...currentWeekdays, day.id]);
-                          } else {
-                            field.onChange(
-                              currentWeekdays.filter(
-                                (value) => value !== day.id,
-                              ),
-                            );
-                          }
-                        }}
-                      />
-                      <label
-                        htmlFor={`weekday-${day.id}`}
-                        className="ml-2 text-sm text-gray-700 dark:text-gray-100"
-                      >
-                        {day.label}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              )}
-            />
-            {errors.weekdays && (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.weekdays.message}
-              </p>
-            )}
-          </div>
-
-          <div className="mt-6 flex justify-end gap-4 pt-4">
-            <Button type="button" variant="outline" onClick={handleClose}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {session?.user.role === 'ADMIN'
-                ? isSubmitting
-                  ? 'Criando...'
-                  : 'Criar Reservas'
-                : isSubmitting
-                  ? 'Solicitando...'
-                  : 'Solicitar Reservas'}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+      <ConflictModal
+        isOpen={conflicts.length > 0}
+        onClose={() => {
+          setConflicts([]);
+          setConflictMessage('');
+        }}
+        conflicts={conflicts}
+        message={conflictMessage}
+      />
+    </>
   );
 }

@@ -8,6 +8,7 @@ import { Card, CardContent } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { IconCheck, IconX, IconInfoCircle } from '@tabler/icons-react';
 import { BookingRequestDetailsModal } from './booking-request-modal'; // Verifique se este é o caminho correto
+import { ConflictModal, type ConflictItem } from './conflict-modal';
 import {
   Dialog,
   DialogContent,
@@ -50,6 +51,9 @@ export function BookingRequestsManager({
   const [requestToRefuse, setRequestToRefuse] =
     useState<BookingRequestWithRelations | null>(null);
   const [refusalReason, setRefusalReason] = useState('');
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [conflicts, setConflicts] = useState<ConflictItem[]>([]);
+  const [conflictMessage, setConflictMessage] = useState('');
 
   const { pending, approved, refused } = useMemo(() => {
     return initialRequests.reduce(
@@ -72,6 +76,7 @@ export function BookingRequestsManager({
     status: 'APROVADO' | 'RECUSADO',
     reason?: string,
   ) => {
+    setProcessingId(requestId);
     try {
       const response = await fetch(`/api/booking-requests/${requestId}`, {
         method: 'PATCH',
@@ -79,8 +84,14 @@ export function BookingRequestsManager({
         body: JSON.stringify({ status, refusalReason: reason }),
       });
       const data = await response.json();
-      if (!response.ok)
+      if (!response.ok) {
+        if (response.status === 409 && data.conflicts) {
+          setConflicts(data.conflicts);
+          setConflictMessage(data.message);
+          return;
+        }
         throw new Error(data.message || 'Falha ao processar a solicitação.');
+      }
 
       toast.success(data.message);
       router.refresh();
@@ -96,6 +107,8 @@ export function BookingRequestsManager({
           },
         },
       });
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -194,6 +207,7 @@ export function BookingRequestsManager({
                           variant="outline"
                           className="flex-1 text-red-600 hover:bg-red-50 hover:text-red-700 lg:flex-auto"
                           onClick={() => handleOpenRefusalModal(req)}
+                          disabled={processingId === req.id}
                         >
                           <IconX className="mr-2 h-4 w-4" /> Recusar
                         </Button>
@@ -203,8 +217,12 @@ export function BookingRequestsManager({
                           onClick={() =>
                             handleUpdateRequest(req.id, 'APROVADO')
                           }
+                          disabled={processingId === req.id}
                         >
-                          <IconCheck className="mr-2 h-4 w-4" /> Aprovar
+                          <IconCheck className="mr-2 h-4 w-4" />
+                          {processingId === req.id
+                            ? 'Processando...'
+                            : 'Aprovar'}
                         </Button>
                       </>
                     )}
@@ -294,6 +312,16 @@ export function BookingRequestsManager({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConflictModal
+        isOpen={conflicts.length > 0}
+        onClose={() => {
+          setConflicts([]);
+          setConflictMessage('');
+        }}
+        conflicts={conflicts}
+        message={conflictMessage}
+      />
     </>
   );
 }

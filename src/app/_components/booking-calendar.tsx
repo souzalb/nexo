@@ -28,6 +28,7 @@ import {
 } from './ui/select';
 import { IconBellRinging, IconCalendarPlus } from '@tabler/icons-react';
 import { CalendarFilters } from './calendar-filters';
+import { ConflictModal, type ConflictItem } from './conflict-modal';
 
 const bookingFormSchema = z.object({
   title: z.string().min(3, 'O título é obrigatório'),
@@ -58,6 +59,9 @@ export default function BookingCalendar({
   const [selectedEvent, setSelectedEvent] = useState<EventClickArg | null>(
     null,
   );
+
+  const [conflicts, setConflicts] = useState<ConflictItem[]>([]);
+  const [conflictMessage, setConflictMessage] = useState('');
 
   const {
     register,
@@ -106,8 +110,14 @@ export default function BookingCalendar({
           body: JSON.stringify(data),
         });
         const responseData = await response.json();
-        if (!response.ok)
+        if (!response.ok) {
+          if (response.status === 409 && responseData.conflicts) {
+            setConflicts(responseData.conflicts);
+            setConflictMessage(responseData.message);
+            return;
+          }
           throw new Error(responseData.message || 'Falha na atualização');
+        }
 
         toast.success(`Reserva atualizada com sucesso!`);
         handleCloseFormModal();
@@ -130,8 +140,14 @@ export default function BookingCalendar({
           },
         );
         const responseData = await response.json();
-        if (!response.ok)
+        if (!response.ok) {
+          if (response.status === 409 && responseData.conflicts) {
+            setConflicts(responseData.conflicts);
+            setConflictMessage(responseData.message);
+            return;
+          }
           throw new Error(responseData.message || 'Falha na atualização.');
+        }
 
         toast.success(responseData.message);
         handleCloseFormModal();
@@ -617,6 +633,15 @@ export default function BookingCalendar({
           </div>
         </div>
       )}
+      <ConflictModal
+        isOpen={conflicts.length > 0}
+        onClose={() => {
+          setConflicts([]);
+          setConflictMessage('');
+        }}
+        conflicts={conflicts}
+        message={conflictMessage}
+      />
     </>
   );
 }

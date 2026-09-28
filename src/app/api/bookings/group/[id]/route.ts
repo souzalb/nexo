@@ -134,29 +134,49 @@ export async function PATCH(
 
     // Verificação de Conflitos em Lote (se a sala mudou)
     if (roomId) {
-      // Precisamos checar cada uma das reservas futuras contra a nova sala
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const allConflicts: any[] = [];
       for (const booking of targetBookings) {
         if (booking.roomId !== roomId) {
-          const conflict = await db.booking.findFirst({
+          const conflicts = await db.booking.findMany({
             where: {
               roomId: roomId,
-              id: { not: booking.id }, // Ignora a própria reserva caso ela já estivesse lá (improvável já que roomId mudou)
+              id: { not: booking.id },
               AND: [
                 { startTime: { lt: booking.endTime } },
                 { endTime: { gt: booking.startTime } },
               ],
             },
+            include: {
+              room: { select: { name: true } },
+              user: { select: { name: true } },
+            },
           });
 
-          if (conflict) {
-            return NextResponse.json(
-              {
-                message: `Conflito de horário na nova sala para o dia ${booking.startTime.toLocaleDateString('pt-BR')}. A atualização em série foi abortada.`,
-              },
-              { status: 409 },
-            );
-          }
+          allConflicts.push(...conflicts);
         }
+      }
+
+      if (allConflicts.length > 0) {
+        // Deduplica
+        const uniqueConflicts = Array.from(
+          new Map(allConflicts.map((c) => [c.id, c])).values(),
+        );
+        return NextResponse.json(
+          {
+            message: `Foram encontrados ${uniqueConflicts.length} conflito(s) de horário na nova sala. A atualização em série foi abortada.`,
+            conflicts: uniqueConflicts.map((c) => ({
+              id: c.id,
+              title: c.title,
+              roomName: c.room.name,
+              userName: c.user.name,
+              startTime: c.startTime,
+              endTime: c.endTime,
+              classCode: c.classCode,
+            })),
+          },
+          { status: 409 },
+        );
       }
     }
 

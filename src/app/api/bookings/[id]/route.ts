@@ -62,7 +62,7 @@ export async function PATCH(
 
     // Se a sala foi alterada, precisamos verificar a disponibilidade na nova sala.
     if (roomId && roomId !== bookingToUpdate.roomId) {
-      const existingBooking = await db.booking.findFirst({
+      const existingConflicts = await db.booking.findMany({
         where: {
           roomId: roomId,
           id: { not: id },
@@ -72,12 +72,28 @@ export async function PATCH(
             { endTime: { gt: bookingToUpdate.startTime } },
           ],
         },
+        include: {
+          room: { select: { name: true } },
+          user: { select: { name: true } },
+        },
+        orderBy: { startTime: 'asc' },
       });
 
-      if (existingBooking) {
+      if (existingConflicts.length > 0) {
         return NextResponse.json(
-          { message: 'Conflito de horário na nova sala selecionada.' },
-          { status: 409 }, // 409 Conflict
+          {
+            message: `Foram encontrados ${existingConflicts.length} conflito(s) de horário na nova sala.`,
+            conflicts: existingConflicts.map((c) => ({
+              id: c.id,
+              title: c.title,
+              roomName: c.room.name,
+              userName: c.user.name,
+              startTime: c.startTime,
+              endTime: c.endTime,
+              classCode: c.classCode,
+            })),
+          },
+          { status: 409 },
         );
       }
     }

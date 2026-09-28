@@ -119,7 +119,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const userPeriodConflict = await db.booking.findFirst({
+    const userPeriodConflicts = await db.booking.findMany({
       where: {
         userId: targetUserId,
         OR: bookingsToCreate.map((b) => ({
@@ -131,23 +131,12 @@ export async function POST(req: Request) {
       },
       include: {
         room: { select: { name: true } },
+        user: { select: { name: true } },
       },
+      orderBy: { startTime: 'asc' },
     });
 
-    if (userPeriodConflict) {
-      const conflictDate = userPeriodConflict.startTime.toLocaleDateString(
-        'pt-BR',
-        { timeZone: 'UTC' },
-      );
-      return NextResponse.json(
-        {
-          message: `Este utilizador já possui uma reserva ("${userPeriodConflict.title}") na sala "${userPeriodConflict.room.name}" que conflita com este período no dia ${conflictDate}.`,
-        },
-        { status: 409 },
-      );
-    }
-
-    const roomConflict = await db.booking.findFirst({
+    const roomConflicts = await db.booking.findMany({
       where: {
         roomId: roomId,
         OR: bookingsToCreate.map((b) => ({
@@ -157,15 +146,33 @@ export async function POST(req: Request) {
           ],
         })),
       },
+      include: {
+        room: { select: { name: true } },
+        user: { select: { name: true } },
+      },
+      orderBy: { startTime: 'asc' },
     });
 
-    if (roomConflict) {
-      const conflictDate = roomConflict.startTime.toLocaleDateString('pt-BR', {
-        timeZone: 'UTC',
-      });
+    // Combina e deduplica conflitos
+    const allConflictsMap = new Map<string, (typeof userPeriodConflicts)[0]>();
+    for (const c of [...userPeriodConflicts, ...roomConflicts]) {
+      allConflictsMap.set(c.id, c);
+    }
+    const allConflicts = Array.from(allConflictsMap.values());
+
+    if (allConflicts.length > 0) {
       return NextResponse.json(
         {
-          message: `Conflito de horário encontrado. A sala já está reservada no dia ${conflictDate}.`,
+          message: `Foram encontrados ${allConflicts.length} conflito(s) de horário.`,
+          conflicts: allConflicts.map((c) => ({
+            id: c.id,
+            title: c.title,
+            roomName: c.room.name,
+            userName: c.user.name,
+            startTime: c.startTime,
+            endTime: c.endTime,
+            classCode: c.classCode,
+          })),
         },
         { status: 409 },
       );
