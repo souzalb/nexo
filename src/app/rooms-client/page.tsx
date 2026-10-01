@@ -1,6 +1,7 @@
 import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
 import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
+import { subDays } from 'date-fns';
 
 import { Period, User } from '@prisma/client';
 import { db } from '../_lib/prisma';
@@ -108,11 +109,28 @@ async function getRooms(filters: {
     }
   }
 
-  return db.room.findMany({
+  const thirtyDaysAgo = subDays(new Date(), 30);
+
+  const rooms = await db.room.findMany({
     where: whereClause,
     orderBy: { name: 'asc' },
-    include: { resources: true, images: true },
+    include: {
+      resources: true,
+      images: true,
+      _count: {
+        select: {
+          bookings: {
+            where: { createdAt: { gte: thirtyDaysAgo } },
+          },
+        },
+      },
+    },
   });
+
+  return rooms.map((room) => ({
+    ...room,
+    occupancy: Math.min(100, Math.round((room._count.bookings / 120) * 100)),
+  }));
 }
 
 // 2. Busca os dados necessários para os próprios filtros

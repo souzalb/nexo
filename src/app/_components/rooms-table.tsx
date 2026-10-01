@@ -9,6 +9,7 @@ import {
   IconMapPin,
   IconBuildingSkyscraper,
   IconTools,
+  IconTrendingUp,
 } from '@tabler/icons-react';
 import React from 'react';
 import Image from 'next/image';
@@ -22,6 +23,7 @@ type RoomWithRelations = {
   location: string | null;
   resources: Resource[];
   images: RoomImage[];
+  occupancy?: number;
 };
 
 interface RoomsTableProps {
@@ -104,6 +106,12 @@ export function RoomsTable({ rooms, onEdit, onDelete }: RoomsTableProps) {
                   <IconUsers className="mr-1.5 h-4 w-4" />
                   <span>{room.capacity} Pessoas</span>
                 </div>
+                {room.occupancy !== undefined && (
+                  <div className="flex items-center">
+                    <IconTrendingUp className="mr-1.5 h-4 w-4" />
+                    <span>{room.occupancy}%</span>
+                  </div>
+                )}
               </div>
 
               {room.resources.length > 0 && (

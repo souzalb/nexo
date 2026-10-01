@@ -14,6 +14,7 @@ import {
   IconBuildingSkyscraper,
   IconUsers,
   IconTools,
+  IconTrendingUp,
 } from '@tabler/icons-react';
 import Image from 'next/image';
 
@@ -25,6 +26,7 @@ type RoomWithRelations = {
   location: string | null;
   resources: Resource[];
   images: RoomImage[];
+  occupancy?: number;
 };
 
 interface RoomItemProps {
@@ -81,6 +83,12 @@ const RoomItem = ({ room, onReserveClick }: RoomItemProps) => {
               <IconUsers className="mr-1.5 h-4 w-4" />
               <span>{room.capacity} Pessoas</span>
             </div>
+            {room.occupancy !== undefined && (
+              <div className="mt-2 flex items-center text-sm text-gray-600 dark:text-gray-100">
+                <IconTrendingUp className="mr-1.5 h-4 w-4" />
+                <span>{room.occupancy}%</span>
+              </div>
+            )}
             {room.resources.length > 0 && (
               <div className="mt-4">
                 <h4 className="flex items-center text-xs font-semibold text-gray-600 uppercase dark:text-gray-100">

@@ -5,6 +5,7 @@ import { AppSidebar } from '../_components/app-sidebar';
 import RoomsManager from '../_components/rooms-manager';
 import { SiteHeader } from '../_components/site-header';
 import { SidebarProvider, SidebarInset } from '../_components/ui/sidebar';
+import { subDays } from 'date-fns';
 
 // Mapa de horários para o cálculo da disponibilidade, ajustado para UTC-3
 const periodTimesUTC: {
@@ -103,14 +104,28 @@ async function getRooms(filters: {
     }
   }
 
-  return db.room.findMany({
+  const thirtyDaysAgo = subDays(new Date(), 30);
+
+  const rooms = await db.room.findMany({
     where: whereClause,
     orderBy: { name: 'asc' },
     include: {
       resources: true,
       images: true,
+      _count: {
+        select: {
+          bookings: {
+            where: { createdAt: { gte: thirtyDaysAgo } },
+          },
+        },
+      },
     },
   });
+
+  return rooms.map((room) => ({
+    ...room,
+    occupancy: Math.min(100, Math.round((room._count.bookings / 120) * 100)),
+  }));
 }
 
 async function getFilterData() {

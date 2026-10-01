@@ -17,6 +17,7 @@ type RoomWithRelations = {
   location: string | null;
   resources: Resource[];
   images: RoomImage[];
+  occupancy?: number;
 };
 
 interface RoomsManagerProps {

@@ -5,6 +5,7 @@ import './globals.css';
 import AuthProvider from './_providers/AuthProvider';
 import { ThemeProvider } from './_providers/theme-provider';
 import { Toaster } from './_components/ui/sonner';
+import { AiAssistant } from './_components/ai-assistant';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -27,7 +28,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            {children}
+            <AiAssistant />
+          </AuthProvider>
           <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>
