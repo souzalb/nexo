@@ -21,9 +21,14 @@ import { Input } from './ui/input';
 interface RoomFiltersProps {
   allLocations: string[];
   allTypes: string[];
+  allResources?: { id: string; name: string }[];
 }
 
-export function RoomFilters({ allLocations, allTypes }: RoomFiltersProps) {
+export function RoomFilters({
+  allLocations,
+  allTypes,
+  allResources = [],
+}: RoomFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -114,6 +119,53 @@ export function RoomFilters({ allLocations, allTypes }: RoomFiltersProps) {
             defaultValue={searchParams.get('capacity') || ''}
             onChange={(e) => handleFilterChange('capacity', e.target.value)}
           />
+        </div>
+
+        {/* --- RECOMENDAÇÃO INTELIGENTE --- */}
+        <div className="mt-4 flex flex-col items-start gap-3 border-t pt-4">
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
+            <span className="text-sm font-semibold text-nowrap text-gray-700 dark:text-gray-100">
+              Recomendação de sala:
+            </span>
+            <Input
+              placeholder="Nº de alunos da turma"
+              type="number"
+              min={1}
+              defaultValue={searchParams.get('students') || ''}
+              onChange={(e) => handleFilterChange('students', e.target.value)}
+              className="sm:w-56"
+            />
+          </div>
+          {allResources.length > 0 && (
+            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
+              <span className="text-sm text-nowrap text-gray-700 dark:text-gray-100">
+                Recursos necessários:
+              </span>
+              <ToggleGroup
+                type="multiple"
+                variant="outline"
+                className="flex-wrap justify-start gap-1"
+                value={searchParams.get('resources')?.split(',') || []}
+                onValueChange={(value) =>
+                  handleFilterChange('resources', value)
+                }
+              >
+                {allResources.map((resource) => (
+                  <ToggleGroupItem
+                    key={resource.id}
+                    value={resource.id}
+                    className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground cursor-pointer rounded-md border"
+                  >
+                    {resource.name}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </div>
+          )}
+          <p className="text-xs text-gray-500">
+            Informe alunos e/ou recursos para ordenar as salas por
+            compatibilidade, considerando lotação ideal e equilíbrio de uso.
+          </p>
         </div>
 
         {/* --- SECÇÃO DE FILTRO DE DISPONIBILIDADE --- */}

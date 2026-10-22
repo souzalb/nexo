@@ -16,12 +16,14 @@ type RoomWithRelations = {
   resources: Resource[];
   images: RoomImage[];
   occupancy?: number;
+  recommendation?: { score: number; reasons: string[] };
 };
 
 interface RoomsClientLayoutProps {
   initialRooms: RoomWithRelations[];
   allLocations: string[];
   allTypes: string[];
+  allResources: { id: string; name: string }[];
   allUsers: Pick<User, 'id' | 'name'>[];
 }
 
@@ -29,6 +31,7 @@ export function RoomsClientLayout({
   initialRooms,
   allLocations,
   allTypes,
+  allResources,
   allUsers,
 }: RoomsClientLayoutProps) {
   const [isRequestModalOpen, setIsRequestModalOpen] = React.useState(false);
@@ -50,15 +53,20 @@ export function RoomsClientLayout({
 
   return (
     <>
-      <RoomFilters allLocations={allLocations} allTypes={allTypes} />
+      <RoomFilters
+        allLocations={allLocations}
+        allTypes={allTypes}
+        allResources={allResources}
+      />
 
       <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {initialRooms.map((room) => (
+        {initialRooms.map((room, index) => (
           // A função para abrir o modal é passada como prop para cada item da sala.
           <RoomItem
             room={room}
             key={room.id}
             onReserveClick={handleOpenRequestModal}
+            isBestMatch={index === 0 && !!room.recommendation}
           />
         ))}
         {initialRooms.length === 0 && (

@@ -6,6 +6,10 @@ import { subDays } from 'date-fns';
 import { Period, User } from '@prisma/client';
 import { db } from '../_lib/prisma';
 import { RoomsClientLayout } from './_components/room-client-layout';
+import {
+  isRecommendationActive,
+  recommendRooms,
+} from '../_lib/room-recommendation';
 
 // Mapa de horários para o cálculo da disponibilidade, ajustado para UTC-3
 const periodTimesUTC: {
@@ -25,6 +29,8 @@ async function getRooms(filters: {
   availabilityEndDate?: string;
   availabilityPeriod?: Period | 'INTEGRAL';
   availabilityDayOfWeek?: string;
+  students?: number;
+  resourceIds?: string[];
 }) {
   const {
     name,
@@ -35,13 +41,19 @@ async function getRooms(filters: {
     availabilityEndDate,
     availabilityPeriod,
     availabilityDayOfWeek,
+    students,
+    resourceIds = [],
   } = filters;
 
   const whereClause: any = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
   if (name) whereClause.name = { contains: name, mode: 'insensitive' };
   if (location) whereClause.location = location;
   if (type) whereClause.type = type;
-  if (capacity && !isNaN(capacity)) whereClause.capacity = { gte: capacity };
+  const minCapacity = Math.max(
+    capacity && !isNaN(capacity) ? capacity : 0,
+    students && !isNaN(students) ? students : 0,
+  );
+  if (minCapacity > 0) whereClause.capacity = { gte: minCapacity };
 
   // --- LÓGICA DE FILTRO DE DISPONIBILIDADE POR INTERVALO ---
   // Apenas executa se todas as 3 condições de disponibilidade forem fornecidas.
@@ -109,7 +121,8 @@ async function getRooms(filters: {
     }
   }
 
-  const thirtyDaysAgo = subDays(new Date(), 30);
+  const now = new Date();
+  const thirtyDaysAgo = subDays(now, 30);
 
   const rooms = await db.room.findMany({
     where: whereClause,
@@ -117,20 +130,47 @@ async function getRooms(filters: {
     include: {
       resources: true,
       images: true,
-      _count: {
-        select: {
-          bookings: {
-            where: { createdAt: { gte: thirtyDaysAgo } },
-          },
+      bookings: {
+        where: {
+          startTime: { gte: thirtyDaysAgo, lte: now },
+          status: { not: 'CANCELLED' },
         },
+        select: { startTime: true, period: true },
       },
     },
   });
 
-  return rooms.map((room) => ({
-    ...room,
-    occupancy: Math.min(100, Math.round((room._count.bookings / 120) * 100)),
-  }));
+  // Ocupação = turnos (dia + período) reservados / turnos disponíveis
+  // nos últimos 30 dias (segunda a sábado, 3 períodos por dia).
+  let workingDays = 0;
+  for (let i = 0; i < 30; i++) {
+    if (subDays(now, i).getDay() !== 0) workingDays++;
+  }
+  const availableSlots = workingDays * 3;
+
+  const withOccupancy = rooms.map(({ bookings, ...room }) => {
+    const bookedSlots = new Set(
+      bookings.map(
+        (b) =>
+          // UTC-3: converte para o dia local brasileiro
+          `${new Date(b.startTime.getTime() - 3 * 3600_000)
+            .toISOString()
+            .slice(0, 10)}|${b.period}`,
+      ),
+    );
+    return {
+      ...room,
+      occupancy: Math.min(
+        100,
+        Math.round((bookedSlots.size / availableSlots) * 100),
+      ),
+    };
+  });
+
+  const criteria = { students, requiredResourceIds: resourceIds };
+  if (!isRecommendationActive(criteria)) return withOccupancy;
+
+  return recommendRooms(withOccupancy, criteria);
 }
 
 // 2. Busca os dados necessários para os próprios filtros
@@ -148,14 +188,21 @@ async function getFilterData() {
     orderBy: { type: 'asc' },
   });
 
-  const [locations, types] = await Promise.all([
+  const resourcesPromise = db.resource.findMany({
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true },
+  });
+
+  const [locations, types, resources] = await Promise.all([
     locationsPromise,
     typesPromise,
+    resourcesPromise,
   ]);
 
   return {
     allLocations: locations.map((l) => l.location!),
     allTypes: types.map((t) => t.type!),
+    allResources: resources,
   };
 }
 
@@ -186,13 +233,16 @@ export default async function RoomsClientPageWrapper({
     availabilityPeriod: resolvedSearchParams.availabilityPeriod as
       Period | undefined,
     availabilityDayOfWeek: resolvedSearchParams.availabilityDayOfWeek,
+    students: resolvedSearchParams.students
+      ? parseInt(resolvedSearchParams.students, 10)
+      : undefined,
+    resourceIds: resolvedSearchParams.resources
+      ? resolvedSearchParams.resources.split(',').filter(Boolean)
+      : undefined,
   };
 
-  const [rooms, { allLocations, allTypes }, users] = await Promise.all([
-    getRooms(filters),
-    getFilterData(),
-    getUsers(),
-  ]);
+  const [rooms, { allLocations, allTypes, allResources }, users] =
+    await Promise.all([getRooms(filters), getFilterData(), getUsers()]);
 
   return (
     <SidebarProvider
@@ -212,6 +262,7 @@ export default async function RoomsClientPageWrapper({
             initialRooms={rooms}
             allLocations={allLocations}
             allTypes={allTypes}
+            allResources={allResources}
             allUsers={users}
           />
         </div>
