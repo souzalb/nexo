@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI, Type, type Tool } from '@google/genai';
 import { Period } from '@prisma/client';
 import { db } from '@/app/_lib/prisma';
 import { authOptions } from '@/app/_lib/auth';
@@ -25,7 +25,7 @@ const periodTimesUTC: {
 };
 
 // --- Definição das tools para o Gemini ---
-const tools = [
+const tools: Tool[] = [
   {
     functionDeclarations: [
       {
