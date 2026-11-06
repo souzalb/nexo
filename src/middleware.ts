@@ -23,5 +23,6 @@ export const config = {
     '/rooms/:path*',
     '/resources/:path*',
     '/reports/:path*',
+    '/mqtt/:path*',
   ],
 };

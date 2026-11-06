@@ -18,6 +18,7 @@ export function SiteHeader() {
     '/profile': 'Perfil',
     '/reports': 'Relatórios',
     '/logs': 'Logs',
+    '/mqtt': 'Monitoramento ESP32',
     '/my-bookings': 'Minhas Reservas',
     '/rooms-client': 'Salas',
     '/requests': 'Solicitações',

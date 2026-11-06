@@ -17,6 +17,7 @@ import {
   IconSearch,
   IconSettings,
   IconUsers,
+  IconWifi,
 } from '@tabler/icons-react';
 
 import {
@@ -164,6 +165,11 @@ const nav = {
     },
   ],
   documents: [
+    {
+      name: 'Monitoramento ESP32',
+      url: '/mqtt',
+      icon: IconWifi,
+    },
     {
       name: 'Relatórios',
       url: '/reports',
