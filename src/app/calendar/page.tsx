@@ -1,3 +1,4 @@
+import { activeBookingStatus } from '@/app/_lib/booking-status';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { Period, Room, User } from '@prisma/client';
@@ -33,7 +34,7 @@ async function getBookings(filters: {
   location?: string;
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const whereClause: any = {}; // Use any to allow flexible nested queries
+  const whereClause: any = { status: activeBookingStatus }; // Use any to allow flexible nested queries
 
   if (filters.roomId) whereClause.roomId = filters.roomId;
   if (

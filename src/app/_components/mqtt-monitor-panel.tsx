@@ -27,11 +27,12 @@ function dateLabel(value: string | null) {
   return value ? new Date(value).toLocaleString('pt-BR') : 'Ainda não recebido';
 }
 
-export function MqttMonitorPanel() {
+export function MqttMonitorPanel({ roomId }: { roomId?: string }) {
   const [data, setData] = useState<MqttSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [messageFilter, setMessageFilter] = useState('all');
 
   useEffect(() => {
     let active = true;
@@ -42,10 +43,15 @@ export function MqttMonitorPanel() {
       const timeout = setTimeout(() => controller.abort(), 10000);
       let retry = true;
       try {
-        const response = await fetch('/api/mqtt', {
-          cache: 'no-store',
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          roomId
+            ? `/api/mqtt?roomId=${encodeURIComponent(roomId)}`
+            : '/api/mqtt',
+          {
+            cache: 'no-store',
+            signal: controller.signal,
+          },
+        );
         if (response.status === 403) {
           retry = false;
           throw new Error(
@@ -80,13 +86,28 @@ export function MqttMonitorPanel() {
       clearTimeout(timer);
       controller?.abort();
     };
-  }, [attempt]);
+  }, [attempt, roomId]);
 
   const connected = !error && data?.status === 'connected';
   const reading = data?.lastReading;
+  const messages =
+    data?.messages.filter(
+      (message) =>
+        messageFilter === 'all' ||
+        (messageFilter === 'unknown'
+          ? !message.state
+          : message.state === messageFilter),
+    ) ?? [];
 
   return (
     <div className="flex flex-col gap-6">
+      <div className="bg-primary/5 space-y-2 rounded-lg border p-4">
+        <h3 className="font-semibold">Leituras de movimento</h3>
+        <p className="text-muted-foreground text-sm">
+          A última leitura indica movimento no sensor, não a ocupação da sala. O
+          ESP32 atual envia uma mensagem a cada mudança de estado.
+        </p>
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-muted-foreground text-sm">
           Atualização a cada 2 segundos · Última consulta:{' '}
@@ -107,7 +128,7 @@ export function MqttMonitorPanel() {
           {error} Os dados abaixo podem estar desatualizados.
         </div>
       )}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm">
@@ -196,11 +217,11 @@ export function MqttMonitorPanel() {
           {data.lastError}
         </p>
       )}
-      <Card>
-        <CardHeader>
-          <CardTitle>Diagnóstico da comunicação</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
+      <details className="bg-card rounded-xl border p-5">
+        <summary className="focus-visible:outline-ring cursor-pointer font-semibold">
+          Conexão e instruções de teste
+        </summary>
+        <div className="mt-4 space-y-3 text-sm">
           <p>
             <strong>Broker:</strong>{' '}
             <span className="font-mono break-all">
@@ -208,22 +229,24 @@ export function MqttMonitorPanel() {
             </span>
           </p>
           <p>
-            <strong>ESP32:</strong> disponibilidade desconhecida. O firmware
-            atual publica apenas mudanças de estado, sem heartbeat ou aviso de
-            desconexão. Uma conexão ativa com o broker não confirma que o ESP32
-            esteja ligado.
+            <strong>Como testar:</strong> aguarde a conexão e a assinatura
+            ficarem ativas. Depois, mova-se diante do sensor. A mensagem
+            DETECTADO deve aparecer aqui; quando a saída do PIR voltar a LOW,
+            chegará PARADO.
           </p>
           <p className="text-muted-foreground">
             DETECTADO indica movimento; PARADO indica ausência de movimento no
-            PIR, sem garantir que a sala esteja vazia. Sem mensagem retida, é
-            necessário aguardar a próxima mudança após conectar.
+            PIR, sem garantir que a sala esteja vazia. Seu sketch envia apenas
+            mudanças de estado: ao abrir a tela, aguarde a próxima mudança. A
+            leitura exibida é a última recebida. O silêncio não informa se o
+            ESP32 está ligado ou desligado.
           </p>
           <p className="text-muted-foreground">
-            O tópico é público: mensagens podem vir de outros clientes. O
-            monitor apenas recebe dados e não envia comandos ao ESP32.
+            No broker público, mensagens podem vir de outros clientes. O monitor
+            apenas recebe dados e não envia comandos ao ESP32.
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </details>
       <Card>
         <CardHeader>
           <CardTitle>Histórico de mensagens</CardTitle>
@@ -231,6 +254,22 @@ export function MqttMonitorPanel() {
             Últimas 100 mensagens, da mais recente para a mais antiga. Histórico
             em memória, reiniciado junto com o servidor.
           </p>
+          <label className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+            Filtrar mensagens
+            <select
+              className="bg-background h-9 rounded-md border px-3"
+              value={messageFilter}
+              onChange={(event) => setMessageFilter(event.target.value)}
+            >
+              <option value="all">Todas as leituras</option>
+              <option value="DETECTADO">Movimento detectado</option>
+              <option value="PARADO">Sem movimento</option>
+              <option value="unknown">Não reconhecidas</option>
+            </select>
+            <span className="text-muted-foreground text-xs">
+              {messages.length} de {data?.messages.length ?? 0} mensagens
+            </span>
+          </label>
         </CardHeader>
         <CardContent>
           <Table>
@@ -243,7 +282,7 @@ export function MqttMonitorPanel() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data?.messages.map((message) => (
+              {messages.map((message) => (
                 <TableRow key={message.id}>
                   <TableCell className="whitespace-nowrap">
                     {dateLabel(message.receivedAt)}
@@ -265,15 +304,17 @@ export function MqttMonitorPanel() {
                   </TableCell>
                 </TableRow>
               ))}
-              {!data?.messages.length && (
+              {!messages.length && (
                 <TableRow>
                   <TableCell
                     colSpan={4}
                     className="text-muted-foreground py-10 text-center"
                   >
-                    {data?.subscribed
-                      ? 'Escutando o tópico. Aguarde uma mudança no sensor PIR.'
-                      : 'Aguardando a conexão e a assinatura do tópico.'}
+                    {data?.messages.length
+                      ? 'Nenhuma mensagem corresponde ao filtro selecionado.'
+                      : data?.subscribed
+                        ? 'Escutando o tópico. Aguarde uma mudança no sensor PIR.'
+                        : 'Aguardando a conexão e a assinatura do tópico.'}
                   </TableCell>
                 </TableRow>
               )}

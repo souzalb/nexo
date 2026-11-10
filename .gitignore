@@ -50,3 +50,10 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+/firmware/esp32-pir/config.h
+/firmware/esp32-pir-standalone/
+/prisma/baseline.tmp.prisma
+
+# Isolated production validation
+.next-validation/

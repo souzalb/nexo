@@ -4,7 +4,7 @@ import { authOptions } from '../_lib/auth';
 import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
 import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
-import { MqttMonitorPanel } from '../_components/mqtt-monitor-panel';
+import { IotDashboard } from '../_components/iot-dashboard';
 
 export default async function MqttPage() {
   const session = await getServerSession(authOptions);
@@ -25,12 +25,13 @@ export default async function MqttPage() {
         <SiteHeader />
         <main className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
           <div>
-            <h1 className="text-2xl font-bold">Monitoramento ESP32</h1>
+            <h1 className="text-2xl font-bold">Monitoramento das salas</h1>
             <p className="text-muted-foreground text-sm">
-              Comunicação MQTT e leituras do sensor de movimento PIR.
+              Selecione um ambiente para acompanhar o sensor e gerenciar o uso
+              da sala.
             </p>
           </div>
-          <MqttMonitorPanel />
+          <IotDashboard />
         </main>
       </SidebarInset>
     </SidebarProvider>

@@ -1,8 +1,25 @@
 import { connect, type MqttClient } from 'mqtt';
 import type { MqttSnapshot } from '@/types/mqtt-monitor';
+import { telemetrySchema } from './iot/rules';
 
 // One connection per Node process, including across Next.js development reloads.
-const globalMqtt = globalThis as unknown as { nexoMqtt?: MqttMonitor };
+const globalMqtt = globalThis as unknown as {
+  nexoMqtt?: MqttMonitor;
+  nexoMqttConfig?: string;
+  nexoRoomMonitors?: Map<
+    string,
+    { monitor: MqttMonitor; timer: ReturnType<typeof setTimeout> }
+  >;
+};
+
+// This receiver follows the original ESP32 sketch. Do not inherit the private
+// broker or credentials configured for the separate attendance collector.
+export function getEsp32ReceiverConfig() {
+  return {
+    url: process.env.ESP32_MQTT_URL || 'mqtt://broker.hivemq.com:1883',
+    topic: process.env.ESP32_MQTT_TOPIC || 'salas/b10/movimento',
+  };
+}
 
 export class MqttMonitor {
   private client: MqttClient;
@@ -36,8 +53,6 @@ export class MqttMonitor {
       connectTimeout: 10000,
       reconnectPeriod: 5000,
       resubscribe: false,
-      username: process.env.MQTT_USERNAME || undefined,
-      password: process.env.MQTT_PASSWORD || undefined,
     });
     this.client.on('connect', () => {
       clearTimeout(this.retryTimer);
@@ -76,11 +91,22 @@ export class MqttMonitor {
     this.client.on('message', (receivedTopic, payload, packet) => {
       if (receivedTopic !== topic) return;
       const value = payload.toString('utf8');
+      let state: 'DETECTADO' | 'PARADO' | null =
+        value === 'DETECTADO' || value === 'PARADO' ? value : null;
+      if (payload.length <= 2048) {
+        try {
+          const sample = telemetrySchema.safeParse(JSON.parse(value));
+          if (sample.success && sample.data.ready)
+            state = sample.data.motion ? 'DETECTADO' : 'PARADO';
+        } catch {
+          /* Legacy firmware sends plain text. */
+        }
+      }
       const message = {
         id: ++this.state.messageCount,
         receivedAt: new Date().toISOString(),
         payload: value.slice(0, 256),
-        state: value === 'DETECTADO' || value === 'PARADO' ? value : null,
+        state,
         retained: packet.retain,
       } as MqttSnapshot['messages'][number];
       if (message.state) this.state.lastReading = message;
@@ -98,10 +124,33 @@ export class MqttMonitor {
   }
 }
 
-export function getMqttMonitor() {
-  globalMqtt.nexoMqtt ??= new MqttMonitor(
-    process.env.MQTT_URL || 'mqtt://broker.hivemq.com:1883',
-    process.env.MQTT_PIR_TOPIC || 'salas/b10/movimento',
-  );
+export function getMqttMonitor(roomTopic?: string) {
+  const { url, topic } = getEsp32ReceiverConfig();
+  if (roomTopic && roomTopic !== topic) {
+    const monitors = (globalMqtt.nexoRoomMonitors ??= new Map());
+    const key = JSON.stringify([url, roomTopic]);
+    const previous = monitors.get(key);
+    // Only opened rooms consume a connection. Release idle diagnostics after 15 min.
+    if (!previous && monitors.size >= 50)
+      throw new Error('Limite de monitores ativos.');
+    const monitor = previous?.monitor ?? new MqttMonitor(url, roomTopic);
+    clearTimeout(previous?.timer);
+    const timer = setTimeout(
+      () => {
+        monitor.stop();
+        monitors.delete(key);
+      },
+      15 * 60 * 1000,
+    );
+    timer.unref?.();
+    monitors.set(key, { monitor, timer });
+    return monitor;
+  }
+  const key = JSON.stringify([url, topic]);
+  if (!globalMqtt.nexoMqtt || globalMqtt.nexoMqttConfig !== key) {
+    globalMqtt.nexoMqtt?.stop();
+    globalMqtt.nexoMqtt = new MqttMonitor(url, topic);
+    globalMqtt.nexoMqttConfig = key;
+  }
   return globalMqtt.nexoMqtt;
 }

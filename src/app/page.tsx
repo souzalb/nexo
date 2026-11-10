@@ -1,3 +1,4 @@
+import { activeBookingStatus } from '@/app/_lib/booking-status';
 import { getServerSession } from 'next-auth';
 import { AppSidebar } from './_components/app-sidebar';
 import { SectionCards } from './_components/section-cards';
@@ -33,20 +34,20 @@ async function getDashboardStats() {
   const thirtyDaysAgo = subDays(new Date(), 30);
 
   const bookingsWithRoomTypePromise = db.booking.findMany({
-    where: { createdAt: { gte: thirtyDaysAgo } },
+    where: { status: activeBookingStatus, createdAt: { gte: thirtyDaysAgo } },
     include: { room: { select: { type: true } } },
   });
 
   const bookingsByPeriodPromise = db.booking.groupBy({
     by: ['period'],
     _count: { period: true },
-    where: { createdAt: { gte: thirtyDaysAgo } },
+    where: { status: activeBookingStatus, createdAt: { gte: thirtyDaysAgo } },
   });
 
   const bookingsByRoomPromise = db.booking.groupBy({
     by: ['roomId'],
     _count: { roomId: true },
-    where: { createdAt: { gte: thirtyDaysAgo } },
+    where: { status: activeBookingStatus, createdAt: { gte: thirtyDaysAgo } },
   });
 
   const topUsersPromise = db.booking.groupBy({
@@ -54,7 +55,7 @@ async function getDashboardStats() {
     _count: { userId: true },
     orderBy: { _count: { userId: 'desc' } },
     take: 5,
-    where: { createdAt: { gte: thirtyDaysAgo } },
+    where: { status: activeBookingStatus, createdAt: { gte: thirtyDaysAgo } },
   });
 
   const totalRoomsPromise = db.room.count();

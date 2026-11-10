@@ -1,3 +1,4 @@
+import { activeBookingStatus } from '@/app/_lib/booking-status';
 import { AppSidebar } from '../_components/app-sidebar';
 import { SiteHeader } from '../_components/site-header';
 import { SidebarInset, SidebarProvider } from '../_components/ui/sidebar';
@@ -100,6 +101,7 @@ async function getRooms(filters: {
     if (timeSlotsToCheck.length > 0) {
       const unavailableRoomIdsQuery = {
         where: {
+          status: activeBookingStatus,
           OR: timeSlotsToCheck.map((slot) => ({
             AND: [
               { startTime: { lt: slot.endTime } },
@@ -133,7 +135,7 @@ async function getRooms(filters: {
       bookings: {
         where: {
           startTime: { gte: thirtyDaysAgo, lte: now },
-          status: { not: 'CANCELLED' },
+          status: activeBookingStatus,
         },
         select: { startTime: true, period: true },
       },

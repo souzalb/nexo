@@ -1,3 +1,4 @@
+import { activeBookingStatus } from '@/app/_lib/booking-status';
 // src/app/api/bookings/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
@@ -60,10 +61,35 @@ export async function PATCH(
     const { title, startTime, endTime, roomId } =
       updateBookingSchema.parse(body);
 
+    if (!['CONFIRMED', 'PENDING'].includes(bookingToUpdate.status)) {
+      return NextResponse.json(
+        {
+          message:
+            'Reservas encerradas permanecem no histórico e não podem ser alteradas.',
+        },
+        { status: 409 },
+      );
+    }
+    if (
+      bookingToUpdate.startTime <= new Date() &&
+      (await db.roomIotConfig.findUnique({
+        where: { roomId: bookingToUpdate.roomId },
+      }))
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            'Uma ocorrência em acompanhamento IoT não pode ter sala ou horário alterados após o início.',
+        },
+        { status: 409 },
+      );
+    }
+
     // Se a sala foi alterada, precisamos verificar a disponibilidade na nova sala.
     if (roomId && roomId !== bookingToUpdate.roomId) {
       const existingConflicts = await db.booking.findMany({
         where: {
+          status: activeBookingStatus,
           roomId: roomId,
           id: { not: id },
           // Procura por sobreposição de horários
@@ -179,9 +205,15 @@ export async function DELETE(
   }
 
   try {
-    await db.booking.delete({
-      where: { id },
+    const cancelled = await db.booking.updateMany({
+      where: { id, status: activeBookingStatus },
+      data: {
+        status: 'CANCELLED',
+        releasedAt: new Date(),
+        releaseReason: 'Cancelamento solicitado pelo usuário.',
+      },
     });
+    if (!cancelled.count) return new NextResponse(null, { status: 204 });
 
     const room = await db.room.findUnique({
       where: { id: bookingToDelete.roomId },

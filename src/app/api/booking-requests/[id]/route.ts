@@ -1,3 +1,4 @@
+import { activeBookingStatus } from '@/app/_lib/booking-status';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 
@@ -123,6 +124,7 @@ export async function PATCH(
       // --- VALIDAÇÕES DE CONFLITO
       const userPeriodConflicts = await db.booking.findMany({
         where: {
+          status: activeBookingStatus,
           userId: request.userId,
           OR: bookingsToCreate.map((b) => ({
             AND: [
@@ -140,6 +142,7 @@ export async function PATCH(
 
       const roomConflicts = await db.booking.findMany({
         where: {
+          status: activeBookingStatus,
           roomId: request.roomId,
           OR: bookingsToCreate.map((b) => ({
             AND: [

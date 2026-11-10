@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -27,6 +27,8 @@ import {
 } from '@tabler/icons-react';
 import { BookingWithRoom } from '../my-bookings/page';
 import { RoomDetailsModal } from './rooms-details-modal';
+import { AttendanceControls } from './attendance-controls';
+import { isActiveBooking } from '../_lib/booking-status';
 
 // Define a estrutura dos dados do formulário de filtro
 type FiltersFormData = {
@@ -42,6 +44,10 @@ interface MyBookingsManagerProps {
 
 export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
   const router = useRouter();
+  useEffect(() => {
+    const timer = setInterval(() => router.refresh(), 30000);
+    return () => clearInterval(timer);
+  }, [router]);
   const [activeFilters, setActiveFilters] = useState<FiltersFormData>({});
 
   // --- NOVO ESTADO PARA CONTROLAR O MODAL DE DETALHES ---
@@ -91,7 +97,10 @@ export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
     const now = new Date();
     return filteredBookings.reduce(
       (acc, booking) => {
-        if (new Date(booking.endTime) >= now) {
+        if (
+          isActiveBooking(booking.status) &&
+          new Date(booking.endTime) >= now
+        ) {
           acc.futureBookings.push(booking);
         } else {
           acc.pastBookings.push(booking);
@@ -236,7 +245,31 @@ export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
                       {new Date(booking.startTime).toLocaleString('pt-BR')} -{' '}
                       {new Date(booking.endTime).toLocaleTimeString('pt-BR')}
                     </p>
+                    {booking.attendance === 'VERIFIED' && (
+                      <p className="text-sm text-green-600">Uso confirmado</p>
+                    )}
+                    {booking.warnedAt && booking.attendance !== 'VERIFIED' && (
+                      <p className="text-sm text-amber-600">
+                        Confirme sua presença. Prazo:{' '}
+                        {booking.confirmationDeadline
+                          ? new Date(
+                              booking.confirmationDeadline,
+                            ).toLocaleTimeString('pt-BR')
+                          : '—'}
+                        .
+                      </p>
+                    )}
+                    {booking.attendance === 'INCONCLUSIVE' && (
+                      <p className="text-sm">
+                        Verificação inconclusiva; reserva mantida.
+                      </p>
+                    )}
                   </div>
+                  {booking.status === 'CONFIRMED' &&
+                    booking.attendance !== 'VERIFIED' &&
+                    new Date(booking.startTime) <= new Date() && (
+                      <AttendanceControls id={booking.id} />
+                    )}
                   <Button
                     variant="destructive"
                     size="sm"
@@ -281,6 +314,24 @@ export function MyBookingsManager({ initialBookings }: MyBookingsManagerProps) {
                   <p className="text-sm text-gray-600 dark:text-gray-300">
                     {new Date(booking.startTime).toLocaleString('pt-BR')}
                   </p>
+                  <p className="text-sm">
+                    {booking.status === 'NO_SHOW'
+                      ? 'No-show — ocorrência liberada'
+                      : booking.status === 'CANCELLED'
+                        ? 'Cancelada'
+                        : booking.attendance === 'VERIFIED'
+                          ? 'Uso confirmado'
+                          : booking.attendance === 'SUSPECTED_NO_SHOW'
+                            ? 'Possível no-show (observação)'
+                            : booking.attendance === 'INCONCLUSIVE'
+                              ? 'Verificação inconclusiva'
+                              : 'Reserva encerrada'}
+                  </p>
+                  {booking.releaseReason && (
+                    <p className="text-muted-foreground text-sm">
+                      {booking.releaseReason}
+                    </p>
+                  )}
                 </li>
               ))
             ) : (

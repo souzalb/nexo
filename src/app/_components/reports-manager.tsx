@@ -92,10 +92,12 @@ export function ReportsManager({ allUsers, allRooms }: ReportsManagerProps) {
       'Utilizador',
       'Data de Início',
       'Data de Fim',
+      'Status',
+      'Verificação de uso',
     ];
     const rows = reportData.map(
       (b) =>
-        `"${b.id}","${b.title}","${b.classCode}","${b.room.name}","${b.user.name}","${new Date(b.startTime).toLocaleString('pt-BR')}","${new Date(b.endTime).toLocaleString('pt-BR')}"`,
+        `"${b.id}","${b.title}","${b.classCode}","${b.room.name}","${b.user.name}","${new Date(b.startTime).toLocaleString('pt-BR')}","${new Date(b.endTime).toLocaleString('pt-BR')}","${b.status}","${b.attendance}"`,
     );
     const csvContent =
       'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
@@ -124,6 +126,7 @@ export function ReportsManager({ allUsers, allRooms }: ReportsManagerProps) {
       'Utilizador',
       'Início',
       'Fim',
+      'Status',
     ];
     /* eslint-disable  @typescript-eslint/no-explicit-any */
     const tableRows: any[] = [];
@@ -136,6 +139,13 @@ export function ReportsManager({ allUsers, allRooms }: ReportsManagerProps) {
         booking.user.name,
         new Date(booking.startTime).toLocaleString('pt-BR'),
         new Date(booking.endTime).toLocaleString('pt-BR'),
+        booking.status === 'NO_SHOW'
+          ? 'No-show'
+          : booking.status === 'CANCELLED'
+            ? 'Cancelada'
+            : booking.status === 'CONFIRMED'
+              ? 'Confirmada'
+              : 'Pendente',
       ];
       tableRows.push(bookingData);
     });
@@ -326,6 +336,7 @@ export function ReportsManager({ allUsers, allRooms }: ReportsManagerProps) {
                   <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-100">
                     Fim
                   </th>
+                  <th className="px-6 py-3 text-left text-xs">Status / uso</th>
                 </tr>
               </thead>
               <tbody className="bg-secondary divide-y">
@@ -349,12 +360,29 @@ export function ReportsManager({ allUsers, allRooms }: ReportsManagerProps) {
                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500 dark:text-gray-300">
                       {new Date(booking.endTime).toLocaleString('pt-BR')}
                     </td>
+                    <td className="px-6 py-4 text-sm">
+                      {booking.status === 'NO_SHOW'
+                        ? 'No-show — liberada'
+                        : booking.status === 'CANCELLED'
+                          ? 'Cancelada'
+                          : booking.status === 'CONFIRMED'
+                            ? 'Confirmada'
+                            : 'Pendente'}
+                      <br />
+                      {booking.attendance === 'VERIFIED'
+                        ? 'Uso confirmado'
+                        : booking.attendance === 'SUSPECTED_NO_SHOW'
+                          ? 'Possível no-show'
+                          : booking.attendance === 'INCONCLUSIVE'
+                            ? 'Inconclusivo'
+                            : 'Sem confirmação'}
+                    </td>
                   </tr>
                 ))}
                 {reportData.length === 0 && (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="py-12 text-center text-sm text-gray-500"
                     >
                       Nenhum resultado para exibir. Por favor, gere um

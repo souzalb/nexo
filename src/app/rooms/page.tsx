@@ -1,3 +1,4 @@
+import { activeBookingStatus } from '@/app/_lib/booking-status';
 import { Period } from '@prisma/client';
 import { db } from '../_lib/prisma';
 import { AdminRoomFilters } from '../_components/admin-room-filters';
@@ -85,6 +86,7 @@ async function getRooms(filters: {
     if (timeSlotsToCheck.length > 0) {
       const unavailableRoomIdsQuery = {
         where: {
+          status: activeBookingStatus,
           OR: timeSlotsToCheck.map((slot) => ({
             AND: [
               { startTime: { lt: slot.endTime } },
@@ -115,7 +117,10 @@ async function getRooms(filters: {
       _count: {
         select: {
           bookings: {
-            where: { createdAt: { gte: thirtyDaysAgo } },
+            where: {
+              status: activeBookingStatus,
+              createdAt: { gte: thirtyDaysAgo },
+            },
           },
         },
       },

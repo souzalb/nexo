@@ -1,3 +1,4 @@
+import { activeBookingStatus } from '@/app/_lib/booking-status';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 
@@ -22,6 +23,7 @@ export async function GET(req: Request) {
     const bookingsByDay = await db.booking.groupBy({
       by: ['createdAt'],
       where: {
+        status: activeBookingStatus,
         createdAt: {
           gte: startDate,
           lte: endDate,

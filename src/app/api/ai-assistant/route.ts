@@ -1,3 +1,4 @@
+import { activeBookingStatus } from '@/app/_lib/booking-status';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { GoogleGenAI, Type, type Tool } from '@google/genai';
@@ -215,6 +216,7 @@ async function verificarDisponibilidade(params: {
 
   const conflicts = await db.booking.findMany({
     where: {
+      status: activeBookingStatus,
       roomId: room_id,
       OR: timeSlotsToCheck.map((slot: { startTime: Date; endTime: Date }) => ({
         AND: [
@@ -313,6 +315,7 @@ async function criarReserva(
     // Verificar conflitos de sala
     const roomConflicts = await db.booking.findMany({
       where: {
+        status: activeBookingStatus,
         roomId: room_id,
         OR: bookingsToCreate.map((b) => ({
           AND: [
@@ -326,6 +329,7 @@ async function criarReserva(
     // Verificar conflitos do usuário
     const userConflicts = await db.booking.findMany({
       where: {
+        status: activeBookingStatus,
         userId: userId,
         OR: bookingsToCreate.map((b) => ({
           AND: [

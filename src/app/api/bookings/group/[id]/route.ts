@@ -1,3 +1,4 @@
+import { activeBookingStatus } from '@/app/_lib/booking-status';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/_lib/auth';
@@ -46,12 +47,18 @@ export async function DELETE(
       return NextResponse.json({ message: 'Acesso negado.' }, { status: 403 });
     }
 
-    const deleteResult = await db.booking.deleteMany({
+    const deleteResult = await db.booking.updateMany({
       where: {
+        status: activeBookingStatus,
         bookingGroupId: bookingGroupId,
         startTime: {
           gte: new Date(startDate), // "gte" = greater than or equal (maior ou igual a)
         },
+      },
+      data: {
+        status: 'CANCELLED',
+        releasedAt: new Date(),
+        releaseReason: 'Cancelamento solicitado para a série.',
       },
     });
 
@@ -110,8 +117,11 @@ export async function PATCH(
     // Busca as reservas alvo
     const targetBookings = await db.booking.findMany({
       where: {
+        status: activeBookingStatus,
         bookingGroupId,
-        startTime: { gte: targetDate },
+        startTime: {
+          gte: new Date(Math.max(targetDate.getTime(), Date.now())),
+        },
       },
     });
 
@@ -140,6 +150,7 @@ export async function PATCH(
         if (booking.roomId !== roomId) {
           const conflicts = await db.booking.findMany({
             where: {
+              status: activeBookingStatus,
               roomId: roomId,
               id: { not: booking.id },
               AND: [
@@ -183,8 +194,11 @@ export async function PATCH(
     // Se passou na verificação de conflito, faz o update em lote
     const updateResult = await db.booking.updateMany({
       where: {
+        status: activeBookingStatus,
         bookingGroupId,
-        startTime: { gte: targetDate },
+        startTime: {
+          gte: new Date(Math.max(targetDate.getTime(), Date.now())),
+        },
       },
       data: {
         ...(title && { title }),

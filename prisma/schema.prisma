@@ -94,6 +94,7 @@ model Room {
   resources Resource[]
   images    RoomImage[]
   requests  BookingRequest[]
+  iotConfig RoomIotConfig?
 }
 
 model Resource {
@@ -123,6 +124,14 @@ model Booking {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   period    Period        @default(MANHA)
+  attendance AttendanceStatus @default(WAITING)
+  verifiedAt DateTime?
+  verificationSource String?
+  warnedAt DateTime?
+  confirmationDeadline DateTime?
+  releasedAt DateTime?
+  releaseReason String?
+  attendanceEvents AttendanceEvent[]
 
 
   classCode      String? // Código da turma (opcional para reservas únicas)
@@ -152,6 +161,87 @@ enum BookingStatus {
   CONFIRMED
   PENDING
   CANCELLED
+  NO_SHOW
+}
+
+enum AttendanceStatus {
+  WAITING
+  VERIFIED
+  SUSPECTED_NO_SHOW
+  INCONCLUSIVE
+}
+
+enum IotMode {
+  OFF
+  OBSERVE
+  AUTOMATIC
+}
+
+model RoomIotConfig {
+  id String @id @default(cuid())
+  roomId String @unique
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  deviceId String @unique
+  topic String @unique
+  mode IotMode @default(OBSERVE)
+  warningMinutes Int @default(10)
+  releaseMinutes Int @default(20)
+  heartbeatSeconds Int @default(90)
+  lastSeenAt DateTime?
+  healthySince DateTime?
+  lastMotionAt DateTime?
+  bootId String?
+  lastSequence Int @default(-1)
+  ready Boolean @default(false)
+  updatedAt DateTime @updatedAt
+  telemetry IotTelemetry[]
+}
+
+model IotTelemetry {
+  id String @id @default(cuid())
+  configId String
+  config RoomIotConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  bootId String
+  sequence Int
+  receivedAt DateTime @default(now())
+  motion Boolean
+  ready Boolean
+  @@unique([configId, bootId, sequence])
+  @@index([configId, receivedAt])
+}
+
+model AttendanceEvent {
+  id String @id @default(cuid())
+  bookingId String
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  kind String
+  detail String
+  actorId String?
+  createdAt DateTime @default(now())
+  @@index([bookingId, createdAt])
+}
+
+model IotRuntime {
+  id String @id
+  owner String
+  leaseUntil DateTime
+  lastTickAt DateTime
+  connected Boolean @default(false)
+  error String?
+}
+
+model IotEmail {
+  id String @id @default(cuid())
+  dedupeKey String @unique
+  to String
+  subject String
+  text String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  sentAt DateTime?
+  nextAttemptAt DateTime @default(now())
+  attempts Int @default(0)
+  error String?
 }
 
 enum Period {

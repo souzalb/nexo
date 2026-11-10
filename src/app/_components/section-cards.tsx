@@ -1,3 +1,4 @@
+import { activeBookingStatus } from '@/app/_lib/booking-status';
 import {
   Card,
   CardAction,
@@ -28,17 +29,26 @@ async function getCardStats() {
 
   // Prepara todas as buscas em paralelo
   const bookingsLast30DaysPromise = db.booking.count({
-    where: { createdAt: { gte: thirtyDaysAgo } },
+    where: { status: activeBookingStatus, createdAt: { gte: thirtyDaysAgo } },
   });
   const bookingsPrev30DaysPromise = db.booking.count({
-    where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
+    where: {
+      status: activeBookingStatus,
+      createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo },
+    },
   });
   const todayBookingsPromise = db.booking.findMany({
-    where: { startTime: { gte: todayStart, lte: todayEnd } },
+    where: {
+      status: activeBookingStatus,
+      startTime: { gte: todayStart, lte: todayEnd },
+    },
     select: { startTime: true, endTime: true },
   });
   const yesterdayBookingsPromise = db.booking.findMany({
-    where: { startTime: { gte: yesterdayStart, lte: yesterdayEnd } },
+    where: {
+      status: activeBookingStatus,
+      startTime: { gte: yesterdayStart, lte: yesterdayEnd },
+    },
     select: { startTime: true, endTime: true },
   });
 
@@ -47,7 +57,7 @@ async function getCardStats() {
     _count: { roomId: true },
     orderBy: { _count: { roomId: 'desc' } },
     take: 1,
-    where: { createdAt: { gte: thirtyDaysAgo } },
+    where: { status: activeBookingStatus, createdAt: { gte: thirtyDaysAgo } },
   });
 
   const totalUsersPromise = db.user.count();

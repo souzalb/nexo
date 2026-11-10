@@ -1,3 +1,4 @@
+import { activeBookingStatus } from '@/app/_lib/booking-status';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { z } from 'zod';
@@ -121,6 +122,7 @@ export async function POST(req: Request) {
 
     const userPeriodConflicts = await db.booking.findMany({
       where: {
+        status: activeBookingStatus,
         userId: targetUserId,
         OR: bookingsToCreate.map((b) => ({
           AND: [
@@ -138,6 +140,7 @@ export async function POST(req: Request) {
 
     const roomConflicts = await db.booking.findMany({
       where: {
+        status: activeBookingStatus,
         roomId: roomId,
         OR: bookingsToCreate.map((b) => ({
           AND: [

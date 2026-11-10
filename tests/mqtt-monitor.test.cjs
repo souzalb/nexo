@@ -5,9 +5,43 @@ require('ts-node').register({
   transpileOnly: true,
   compilerOptions: { module: 'CommonJS', moduleResolution: 'node' },
 });
-const { MqttMonitor } = require('../src/app/_lib/mqtt-monitor.ts');
+const {
+  MqttMonitor,
+  getEsp32ReceiverConfig,
+} = require('../src/app/_lib/mqtt-monitor.ts');
 
-function setup(grantedQos = 0) {
+test('original ESP32 receiver does not inherit EMQX credentials or address', () => {
+  const original = { ...process.env };
+  try {
+    delete process.env.ESP32_MQTT_URL;
+    delete process.env.ESP32_MQTT_TOPIC;
+    process.env.MQTT_URL = 'mqtts://private.example.invalid:8883';
+    process.env.MQTT_USERNAME = 'private-user';
+    process.env.MQTT_PASSWORD = 'private-password';
+    process.env.MQTT_PIR_TOPIC = 'private/topic';
+    const config = getEsp32ReceiverConfig();
+    assert.deepEqual(config, {
+      url: 'mqtt://broker.hivemq.com:1883',
+      topic: 'salas/b10/movimento',
+    });
+    const client = new EventEmitter();
+    client.end = () => {};
+    const monitor = new MqttMonitor(
+      config.url,
+      config.topic,
+      (url, options) => {
+        assert.equal(options.username, undefined);
+        assert.equal(options.password, undefined);
+        return client;
+      },
+    );
+    monitor.stop();
+  } finally {
+    process.env = original;
+  }
+});
+
+function setup(grantedQos = 0, topic = 'salas/b10/movimento') {
   const client = new EventEmitter();
   client.connected = true;
   client.subscribe = (topic, options, callback) =>
@@ -16,11 +50,37 @@ function setup(grantedQos = 0) {
   client.reconnect = () => {};
   const monitor = new MqttMonitor(
     'mqtt://broker.hivemq.com:1883',
-    'salas/b10/movimento',
+    topic,
     () => client,
   );
   return { client, monitor };
 }
+
+test('rooms keep independent subscriptions, readings and history', () => {
+  const first = setup();
+  const second = setup(0, 'salas/b11/movimento');
+  try {
+    first.client.emit('connect');
+    second.client.emit('connect');
+    for (const { client } of [first, second]) {
+      client.emit('message', 'salas/b10/movimento', Buffer.from('DETECTADO'), {
+        retain: false,
+      });
+      client.emit('message', 'salas/b11/movimento', Buffer.from('PARADO'), {
+        retain: false,
+      });
+    }
+    assert.equal(first.monitor.snapshot().lastReading.state, 'DETECTADO');
+    assert.equal(second.monitor.snapshot().lastReading.state, 'PARADO');
+    assert.equal(first.monitor.snapshot().messageCount, 1);
+    assert.equal(second.monitor.snapshot().messageCount, 1);
+    first.client.emit('close');
+    assert.equal(second.monitor.snapshot().subscribed, true);
+  } finally {
+    first.monitor.stop();
+    second.monitor.stop();
+  }
+});
 
 test('connection and subscription recover after a dropped connection', () => {
   const { client, monitor } = setup();

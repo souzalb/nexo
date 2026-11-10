@@ -6,6 +6,9 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
+    "iot:worker": "node scripts/iot-worker.cjs",
+    "test:iot": "node --test tests/iot-*.test.cjs tests/mqtt-monitor.test.cjs",
+    "test:iot:postgres": "node tests/iot-postgres.cjs",
     "lint": "eslint",
     "prepare": "husky"
   },
