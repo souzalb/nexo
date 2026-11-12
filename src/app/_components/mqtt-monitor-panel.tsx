@@ -1,7 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Activity, Radio, Server, Timer } from 'lucide-react';
+import {
+  Activity,
+  Radio,
+  Server,
+  Timer,
+  Pause,
+  Play,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import type { BrokerStatus, MqttSnapshot } from '@/types/mqtt-monitor';
 import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -33,12 +43,17 @@ export function MqttMonitorPanel({ roomId }: { roomId?: string }) {
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [messageFilter, setMessageFilter] = useState('all');
+  const [paused, setPaused] = useState(false);
+  const [page, setPage] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
+    if (paused) return;
     let active = true;
     let timer: ReturnType<typeof setTimeout>;
     let controller: AbortController;
     async function update() {
+      if (active) setRefreshing(true);
       controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
       let retry = true;
@@ -76,6 +91,7 @@ export function MqttMonitorPanel({ roomId }: { roomId?: string }) {
               : 'O servidor não respondeu. Tente atualizar a conexão.',
           );
       } finally {
+        if (active) setRefreshing(false);
         clearTimeout(timeout);
         if (active && retry) timer = setTimeout(update, 2000);
       }
@@ -86,7 +102,7 @@ export function MqttMonitorPanel({ roomId }: { roomId?: string }) {
       clearTimeout(timer);
       controller?.abort();
     };
-  }, [attempt, roomId]);
+  }, [attempt, roomId, paused]);
 
   const connected = !error && data?.status === 'connected';
   const reading = data?.lastReading;
@@ -98,28 +114,65 @@ export function MqttMonitorPanel({ roomId }: { roomId?: string }) {
           ? !message.state
           : message.state === messageFilter),
     ) ?? [];
+  const pages = Math.max(1, Math.ceil(messages.length / 10));
+  const currentPage = Math.min(page, pages - 1);
+  const movement = reading?.state === 'DETECTADO';
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="bg-primary/5 space-y-2 rounded-lg border p-4">
-        <h3 className="font-semibold">Leituras de movimento</h3>
-        <p className="text-muted-foreground text-sm">
-          A última leitura indica movimento no sensor, não a ocupação da sala. O
-          ESP32 atual envia uma mensagem a cada mudança de estado.
-        </p>
-      </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-muted-foreground text-sm">
-          Atualização a cada 2 segundos · Última consulta:{' '}
-          {dateLabel(updatedAt)}
-        </p>
-        <Button
-          variant="outline"
-          onClick={() => setAttempt((value) => value + 1)}
-        >
-          Atualizar agora
-        </Button>
+        <div className="flex items-center gap-2 text-sm">
+          <span
+            className={`size-2 rounded-full ${paused ? 'bg-amber-500' : error ? 'bg-destructive' : 'bg-primary'}`}
+          />
+          <span className="font-medium">
+            {paused ? 'Visualização pausada' : 'Atualização automática'}
+          </span>
+          <span className="text-muted-foreground text-xs">
+            {paused ? '' : 'a cada 2 s'}
+          </span>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setPaused((value) => !value);
+              setPage(0);
+            }}
+          >
+            {paused ? (
+              <Play className="size-4" />
+            ) : (
+              <Pause className="size-4" />
+            )}
+            {paused ? 'Retomar' : 'Pausar tela'}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={refreshing && !paused}
+            onClick={() => {
+              setPaused(false);
+              setAttempt((value) => value + 1);
+            }}
+          >
+            <RefreshCw
+              className={`size-4 ${refreshing && !paused ? 'motion-safe:animate-spin' : ''}`}
+            />{' '}
+            Atualizar
+          </Button>
+        </div>
       </div>
+      {paused && (
+        <p
+          role="status"
+          className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm"
+        >
+          A tela está congelada para consulta do histórico. O ESP32 e o coletor
+          continuam operando conforme suas configurações.
+        </p>
+      )}
       {error && (
         <div
           role="alert"
@@ -128,7 +181,47 @@ export function MqttMonitorPanel({ roomId }: { roomId?: string }) {
           {error} Os dados abaixo podem estar desatualizados.
         </div>
       )}
-      <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
+      <div
+        className={`relative overflow-hidden rounded-2xl border p-5 sm:p-7 ${movement ? 'border-primary/30 bg-primary/5' : 'bg-card'}`}
+      >
+        <div className="flex flex-wrap items-center gap-5">
+          <div
+            className={`flex size-16 shrink-0 items-center justify-center rounded-2xl ${movement ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+          >
+            <Activity className="size-8" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
+              Última leitura recebida
+            </p>
+            <h3 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+              {movement
+                ? 'Movimento detectado'
+                : reading?.state === 'PARADO'
+                  ? 'Sem movimento'
+                  : 'Aguardando o sensor'}
+            </h3>
+            <p className="text-muted-foreground mt-2 text-sm">
+              {reading
+                ? dateLabel(reading.receivedAt)
+                : 'A primeira amostra aparecerá após o recebimento pelo servidor.'}
+            </p>
+          </div>
+          <Badge variant="outline">
+            {reading?.retained
+              ? 'Mensagem retida'
+              : reading
+                ? 'Leitura recebida'
+                : 'Sem leitura'}
+          </Badge>
+        </div>
+        <p className="text-muted-foreground mt-5 border-t pt-4 text-xs">
+          Movimento indica atividade no ambiente. “Sem movimento” não confirma
+          sala vazia; a leitura acima não é uma confirmação de presença do
+          responsável.
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm">
@@ -176,28 +269,6 @@ export function MqttMonitorPanel({ roomId }: { roomId?: string }) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm">
-              <Activity className="size-4" />
-              Último estado do PIR
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-lg font-semibold">
-              {reading?.state === 'DETECTADO'
-                ? 'Movimento detectado'
-                : reading?.state === 'PARADO'
-                  ? 'Sem movimento'
-                  : 'Aguardando leitura'}
-            </p>
-            <p className="text-muted-foreground text-xs">
-              {reading
-                ? dateLabel(reading.receivedAt)
-                : 'Mova-se diante do sensor para gerar uma mensagem.'}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm">
               <Timer className="size-4" />
               Mensagens recebidas
             </CardTitle>
@@ -236,14 +307,14 @@ export function MqttMonitorPanel({ roomId }: { roomId?: string }) {
           </p>
           <p className="text-muted-foreground">
             DETECTADO indica movimento; PARADO indica ausência de movimento no
-            PIR, sem garantir que a sala esteja vazia. Seu sketch envia apenas
-            mudanças de estado: ao abrir a tela, aguarde a próxima mudança. A
-            leitura exibida é a última recebida. O silêncio não informa se o
-            ESP32 está ligado ou desligado.
+            PIR, sem garantir que a sala esteja vazia. O sketch com heartbeat
+            envia amostras a cada 30 segundos, além das mudanças. Após reiniciar
+            a placa, aguarde 60 segundos de estabilização. A conexão com o
+            broker não comprova, sozinha, que o ESP32 esteja online.
           </p>
           <p className="text-muted-foreground">
-            No broker público, mensagens podem vir de outros clientes. O monitor
-            apenas recebe dados e não envia comandos ao ESP32.
+            Este painel apenas recebe dados e não envia comandos ao ESP32.
+            Última consulta ao servidor: {dateLabel(updatedAt)}.
           </p>
         </div>
       </details>
@@ -252,14 +323,18 @@ export function MqttMonitorPanel({ roomId }: { roomId?: string }) {
           <CardTitle>Histórico de mensagens</CardTitle>
           <p className="text-muted-foreground text-sm">
             Últimas 100 mensagens, da mais recente para a mais antiga. Histórico
-            em memória, reiniciado junto com o servidor.
+            em memória. Não representa os registros gravados no banco pelo
+            coletor.
           </p>
           <label className="mt-3 flex flex-wrap items-center gap-2 text-sm">
             Filtrar mensagens
             <select
               className="bg-background h-9 rounded-md border px-3"
               value={messageFilter}
-              onChange={(event) => setMessageFilter(event.target.value)}
+              onChange={(event) => {
+                setMessageFilter(event.target.value);
+                setPage(0);
+              }}
             >
               <option value="all">Todas as leituras</option>
               <option value="DETECTADO">Movimento detectado</option>
@@ -282,28 +357,45 @@ export function MqttMonitorPanel({ roomId }: { roomId?: string }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {messages.map((message) => (
-                <TableRow key={message.id}>
-                  <TableCell className="whitespace-nowrap">
-                    {dateLabel(message.receivedAt)}
-                  </TableCell>
-                  <TableCell className="max-w-64 font-mono break-all whitespace-normal">
-                    {message.payload || '(vazia)'}
-                  </TableCell>
-                  <TableCell>
-                    {message.state === 'DETECTADO'
-                      ? 'Movimento'
-                      : message.state === 'PARADO'
-                        ? 'Sem movimento'
-                        : 'Payload não reconhecido'}
-                  </TableCell>
-                  <TableCell>
-                    {message.retained
-                      ? 'Retida pelo broker'
-                      : 'Publicação recebida'}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {messages
+                .slice(currentPage * 10, currentPage * 10 + 10)
+                .map((message) => (
+                  <TableRow key={message.id}>
+                    <TableCell className="whitespace-nowrap">
+                      {dateLabel(message.receivedAt)}
+                    </TableCell>
+                    <TableCell className="max-w-64 font-mono break-all whitespace-normal">
+                      <details>
+                        <summary className="cursor-pointer text-xs">
+                          Ver conteúdo
+                        </summary>
+                        <pre className="mt-2 max-w-64 text-xs break-all whitespace-pre-wrap">
+                          {message.payload || '(vazia)'}
+                        </pre>
+                      </details>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          message.state === 'DETECTADO'
+                            ? 'success'
+                            : 'secondary'
+                        }
+                      >
+                        {message.state === 'DETECTADO'
+                          ? 'Movimento'
+                          : message.state === 'PARADO'
+                            ? 'Sem movimento'
+                            : 'Sem leitura válida'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {message.retained
+                        ? 'Retida pelo broker'
+                        : 'Publicação recebida'}
+                    </TableCell>
+                  </TableRow>
+                ))}
               {!messages.length && (
                 <TableRow>
                   <TableCell
@@ -313,13 +405,47 @@ export function MqttMonitorPanel({ roomId }: { roomId?: string }) {
                     {data?.messages.length
                       ? 'Nenhuma mensagem corresponde ao filtro selecionado.'
                       : data?.subscribed
-                        ? 'Escutando o tópico. Aguarde uma mudança no sensor PIR.'
+                        ? 'Escutando o tópico. Aguarde o próximo heartbeat ou uma mudança no PIR.'
                         : 'Aguardando a conexão e a assinatura do tópico.'}
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
+          {messages.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+              <p className="text-muted-foreground text-xs">
+                Página {currentPage + 1} de {pages} · Pause a tela para navegar
+                sem novas entradas.
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  aria-label="Página anterior"
+                  disabled={currentPage === 0}
+                  onClick={() => {
+                    setPaused(true);
+                    setPage(currentPage - 1);
+                  }}
+                >
+                  <ChevronLeft className="size-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  aria-label="Próxima página"
+                  disabled={currentPage >= pages - 1}
+                  onClick={() => {
+                    setPaused(true);
+                    setPage(currentPage + 1);
+                  }}
+                >
+                  <ChevronRight className="size-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

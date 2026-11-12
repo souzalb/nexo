@@ -53,6 +53,8 @@ next-env.d.ts
 
 /firmware/esp32-pir/config.h
 /firmware/esp32-pir-standalone/
+/firmware/esp32-pir-secure-local/
+/firmware/esp32-pir-secure/config.h
 /prisma/baseline.tmp.prisma
 
 # Isolated production validation

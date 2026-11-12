@@ -7,6 +7,8 @@ import {
   DoorOpen,
   Search,
   Settings2,
+  Cpu,
+  CalendarClock,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -14,6 +16,7 @@ import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { MqttMonitorPanel } from './mqtt-monitor-panel';
 import { IotAttendancePanel } from './iot-attendance-panel';
+import { IotCollectionSchedule } from './iot-collection-schedule';
 
 type Room = {
   id: string;
@@ -95,20 +98,53 @@ export function IotDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div
+        className="grid gap-3 sm:grid-cols-3"
+        aria-label="Resumo e filtros das salas"
+      >
         {[
-          ['Salas cadastradas', rooms.length],
-          ['Com sensor configurado', configured],
-          ['Sem sensor', rooms.length - configured],
-        ].map(([label, value]) => (
-          <div key={label} className="bg-card rounded-xl border px-5 py-4">
-            <p className="text-muted-foreground text-sm">{label}</p>
-            <p className="mt-1 text-3xl font-semibold tabular-nums">
-              {loading ? '—' : value}
-            </p>
-          </div>
+          {
+            label: 'Todas as salas',
+            value: rooms.length,
+            id: 'all',
+            icon: DoorOpen,
+          },
+          {
+            label: 'Sensores configurados',
+            value: configured,
+            id: 'configured',
+            icon: Cpu,
+          },
+          {
+            label: 'Aguardando configuração',
+            value: rooms.length - configured,
+            id: 'unconfigured',
+            icon: Settings2,
+          },
+        ].map(({ label, value, id, icon: Icon }) => (
+          <button
+            type="button"
+            key={id}
+            onClick={() => {
+              setFilter(id);
+              setQuery('');
+            }}
+            aria-pressed={filter === id}
+            className={`bg-card hover:bg-muted/50 focus-visible:outline-ring flex items-center justify-between gap-3 rounded-xl border px-5 py-4 text-left transition-colors focus-visible:outline-2 ${filter === id ? 'border-primary/50 ring-primary/10 ring-1' : ''}`}
+          >
+            <div>
+              <p className="text-muted-foreground text-xs font-medium">
+                {label}
+              </p>
+              <p className="mt-2 text-2xl font-semibold tabular-nums">
+                {loading ? '—' : value}
+              </p>
+            </div>
+            <Icon className="text-muted-foreground size-5" />
+          </button>
         ))}
       </div>
+      <IotCollectionSchedule />
       {error && (
         <div
           role="alert"
@@ -126,7 +162,7 @@ export function IotDashboard() {
       )}
       <div className="grid items-start gap-6 xl:grid-cols-[260px_minmax(0,1fr)]">
         <aside
-          className="bg-card space-y-4 rounded-xl border p-4"
+          className="bg-card space-y-4 rounded-xl border p-4 xl:sticky xl:top-4"
           aria-label="Seleção de sala"
         >
           <div className="flex items-center gap-2 font-semibold">
@@ -168,7 +204,12 @@ export function IotDashboard() {
                 onClick={() => setSelectedId(room.id)}
                 className={`focus-visible:outline-ring flex items-center justify-between gap-2 rounded-lg border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 ${selectedId === room.id ? 'border-primary bg-primary/5' : 'hover:bg-muted'}`}
               >
-                <span className="min-w-0">
+                <span
+                  className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${selectedId === room.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                >
+                  <DoorOpen className="size-4" />
+                </span>
+                <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">
                     {room.name}
                   </span>
@@ -206,7 +247,7 @@ export function IotDashboard() {
         >
           {selected ? (
             <>
-              <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="bg-card flex flex-wrap items-start justify-between gap-4 rounded-2xl border p-5 sm:p-6">
                 <div>
                   <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                     Sala selecionada
@@ -215,7 +256,9 @@ export function IotDashboard() {
                     {selected.name}
                   </h2>
                   <p className="text-muted-foreground mt-1 text-sm">
-                    Leituras, ocorrências e ajustes deste ambiente.
+                    {selected.iotConfig
+                      ? `Dispositivo ${selected.iotConfig.deviceId}`
+                      : 'Associe um ESP32 para acompanhar este ambiente.'}
                   </p>
                 </div>
                 <Badge variant="outline">
@@ -223,15 +266,32 @@ export function IotDashboard() {
                     ? modes[selected.iotConfig.mode]
                     : 'Configuração pendente'}
                 </Badge>
+                {selected.iotConfig && (
+                  <div className="text-muted-foreground flex w-full flex-wrap gap-x-5 gap-y-2 border-t pt-4 text-xs">
+                    <span>
+                      Alerta configurado:{' '}
+                      <strong className="text-foreground">
+                        {selected.iotConfig.warningMinutes} min
+                      </strong>
+                    </span>
+                    <span>
+                      Avaliação configurada:{' '}
+                      <strong className="text-foreground">
+                        {selected.iotConfig.releaseMinutes} min
+                      </strong>
+                    </span>
+                    <span>Contados desde o início da reserva</span>
+                  </div>
+                )}
               </div>
               <Tabs value={tab} onValueChange={setTab}>
-                <TabsList className="mb-4 flex h-auto w-full flex-wrap justify-start gap-1 p-1">
+                <TabsList className="mb-5 flex h-auto w-full flex-wrap justify-start gap-1 rounded-xl p-1.5">
                   <TabsTrigger value="sensor">
                     <Activity className="mr-2 size-4" />
                     Sensor ao vivo
                   </TabsTrigger>
                   <TabsTrigger value="occurrences">
-                    Reservas e ocorrências
+                    <CalendarClock className="mr-2 size-4" /> Ocorrências
                   </TabsTrigger>
                   <TabsTrigger value="settings">
                     <Settings2 className="mr-2 size-4" />
@@ -282,9 +342,11 @@ export function IotDashboard() {
               role="status"
               className="text-muted-foreground rounded-xl border p-10 text-center"
             >
-              {loading
-                ? 'Preparando o monitoramento…'
-                : 'Cadastre uma sala para começar o monitoramento.'}
+              {error
+                ? 'As salas não puderam ser carregadas. Use “Tentar novamente”.'
+                : loading
+                  ? 'Preparando o monitoramento…'
+                  : 'Cadastre uma sala para começar o monitoramento.'}
             </div>
           )}
         </section>

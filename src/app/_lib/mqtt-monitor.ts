@@ -15,6 +15,22 @@ const globalMqtt = globalThis as unknown as {
 // This receiver follows the original ESP32 sketch. Do not inherit the private
 // broker or credentials configured for the separate attendance collector.
 export function getEsp32ReceiverConfig() {
+  if (process.env.ESP32_MQTT_USE_COLLECTOR === 'true') {
+    const url = process.env.MQTT_URL || '';
+    const address = new URL(url);
+    if (
+      !['mqtts:', 'wss:'].includes(address.protocol) ||
+      !process.env.MQTT_USERNAME ||
+      !process.env.MQTT_PASSWORD
+    )
+      throw new Error('O receptor privado exige TLS e credenciais do coletor.');
+    return {
+      url,
+      topic: process.env.ESP32_MQTT_TOPIC || 'salas/b10/movimento',
+      username: process.env.MQTT_USERNAME,
+      password: process.env.MQTT_PASSWORD,
+    };
+  }
   return {
     url: process.env.ESP32_MQTT_URL || 'mqtt://broker.hivemq.com:1883',
     topic: process.env.ESP32_MQTT_TOPIC || 'salas/b10/movimento',
@@ -26,7 +42,12 @@ export class MqttMonitor {
   private state: MqttSnapshot;
   private retryTimer?: ReturnType<typeof setTimeout>;
 
-  constructor(url: string, topic: string, connectClient = connect) {
+  constructor(
+    url: string,
+    topic: string,
+    connectClient = connect,
+    credentials?: { username?: string; password?: string },
+  ) {
     const address = new URL(url);
     if (
       !['mqtt:', 'mqtts:', 'ws:', 'wss:'].includes(address.protocol) ||
@@ -35,6 +56,8 @@ export class MqttMonitor {
     ) {
       throw new Error('Configuração MQTT inválida.');
     }
+    if (credentials && !['mqtts:', 'wss:'].includes(address.protocol))
+      throw new Error('Credenciais exigem TLS.');
     this.state = {
       broker: `${address.protocol}//${address.host}${address.pathname}`,
       topic,
@@ -48,6 +71,8 @@ export class MqttMonitor {
       messages: [],
     };
     this.client = connectClient(url, {
+      ...credentials,
+      rejectUnauthorized: true,
       clientId: `nexo_admin_${crypto.randomUUID()}`,
       clean: true,
       connectTimeout: 10000,
@@ -125,15 +150,22 @@ export class MqttMonitor {
 }
 
 export function getMqttMonitor(roomTopic?: string) {
-  const { url, topic } = getEsp32ReceiverConfig();
+  const config = getEsp32ReceiverConfig();
+  const { url, topic } = config;
+  const credentials =
+    'username' in config
+      ? { username: config.username, password: config.password }
+      : undefined;
   if (roomTopic && roomTopic !== topic) {
     const monitors = (globalMqtt.nexoRoomMonitors ??= new Map());
-    const key = JSON.stringify([url, roomTopic]);
+    const key = JSON.stringify([url, roomTopic, credentials]);
     const previous = monitors.get(key);
     // Only opened rooms consume a connection. Release idle diagnostics after 15 min.
     if (!previous && monitors.size >= 50)
       throw new Error('Limite de monitores ativos.');
-    const monitor = previous?.monitor ?? new MqttMonitor(url, roomTopic);
+    const monitor =
+      previous?.monitor ??
+      new MqttMonitor(url, roomTopic, connect, credentials);
     clearTimeout(previous?.timer);
     const timer = setTimeout(
       () => {
@@ -146,10 +178,10 @@ export function getMqttMonitor(roomTopic?: string) {
     monitors.set(key, { monitor, timer });
     return monitor;
   }
-  const key = JSON.stringify([url, topic]);
+  const key = JSON.stringify([url, topic, credentials]);
   if (!globalMqtt.nexoMqtt || globalMqtt.nexoMqttConfig !== key) {
     globalMqtt.nexoMqtt?.stop();
-    globalMqtt.nexoMqtt = new MqttMonitor(url, topic);
+    globalMqtt.nexoMqtt = new MqttMonitor(url, topic, connect, credentials);
     globalMqtt.nexoMqttConfig = key;
   }
   return globalMqtt.nexoMqtt;

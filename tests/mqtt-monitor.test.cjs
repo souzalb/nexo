@@ -14,6 +14,7 @@ test('original ESP32 receiver does not inherit EMQX credentials or address', () 
   const original = { ...process.env };
   try {
     delete process.env.ESP32_MQTT_URL;
+    delete process.env.ESP32_MQTT_USE_COLLECTOR;
     delete process.env.ESP32_MQTT_TOPIC;
     process.env.MQTT_URL = 'mqtts://private.example.invalid:8883';
     process.env.MQTT_USERNAME = 'private-user';
@@ -36,6 +37,48 @@ test('original ESP32 receiver does not inherit EMQX credentials or address', () 
       },
     );
     monitor.stop();
+  } finally {
+    process.env = original;
+  }
+});
+
+test('private receiver explicitly uses collector credentials and requires TLS', () => {
+  const original = { ...process.env };
+  try {
+    process.env.ESP32_MQTT_USE_COLLECTOR = 'true';
+    process.env.MQTT_URL = 'mqtts://private.example.invalid:8883';
+    process.env.MQTT_USERNAME = 'collector';
+    process.env.MQTT_PASSWORD = 'test-secret';
+    const config = getEsp32ReceiverConfig();
+    assert.equal(config.username, 'collector');
+    assert.equal(config.password, 'test-secret');
+    const client = new EventEmitter();
+    client.end = () => {};
+    const monitor = new MqttMonitor(
+      config.url,
+      config.topic,
+      (url, options) => {
+        assert.equal(options.username, 'collector');
+        assert.equal(options.password, 'test-secret');
+        assert.equal(options.rejectUnauthorized, true);
+        return client;
+      },
+      { username: config.username, password: config.password },
+    );
+    assert.ok(!JSON.stringify(monitor.snapshot()).includes('test-secret'));
+    monitor.stop();
+    process.env.MQTT_URL = 'mqtt://private.example.invalid:1883';
+    assert.throws(() => getEsp32ReceiverConfig());
+    assert.throws(
+      () =>
+        new MqttMonitor(process.env.MQTT_URL, config.topic, () => client, {
+          username: 'collector',
+          password: 'secret',
+        }),
+    );
+    process.env.MQTT_URL = 'mqtts://private.example.invalid:8883';
+    delete process.env.MQTT_PASSWORD;
+    assert.throws(() => getEsp32ReceiverConfig());
   } finally {
     process.env = original;
   }
