@@ -11,6 +11,7 @@ import * as React from 'react';
 
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { UserCombobox } from './user-combobox';
 import {
   Select,
   SelectContent,
@@ -306,21 +307,13 @@ export function RecurringBookingModal({
                   name="userId"
                   control={control}
                   render={({ field }) => (
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Selecione um utilizador (opcional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {users.map((user) => (
-                          <SelectItem key={user.id} value={user.id}>
-                            {user.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <UserCombobox
+                      users={users}
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                    />
                   )}
                 />
               </div>
