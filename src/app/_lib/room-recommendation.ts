@@ -108,3 +108,18 @@ export function recommendRooms<T extends RecommendableRoom>(
         a.occupancy - b.occupancy,
     );
 }
+
+/** Assistant starts with one recommendation; expanded comparisons are opt-in. */
+export function recommendAssistantRooms<T extends RecommendableRoom>(
+  rooms: T[],
+  criteria: RecommendationCriteria,
+  options: { alternatives?: boolean; excludedIds?: string[] } = {},
+) {
+  const candidates = rooms.filter(
+    (room) => !options.excludedIds?.includes(room.id),
+  );
+  return recommendRooms(candidates, criteria).slice(
+    0,
+    options.alternatives ? 8 : 1,
+  );
+}
